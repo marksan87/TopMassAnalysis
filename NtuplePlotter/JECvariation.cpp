@@ -14,11 +14,11 @@ JECvariation::JECvariation(std::string inputPrefix, bool isMC){
 		L1JetPar  = new JetCorrectorParameters((inputPrefix+"_MC_L1FastJet_AK4PF.txt").c_str());
 	}
 	else{
-		jecUnc = new JetCorrectionUncertainty((inputPrefix+"_DATA_Uncertainty_AK5PF.txt").c_str());
-		ResJetPar = new JetCorrectorParameters((inputPrefix+"_DATA_L2L3Residual_AK5PF.txt").c_str());
-		L3JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L3Absolute_AK5PF.txt").c_str());
-		L2JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L2Relative_AK5PF.txt").c_str());
-		L1JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L1FastJet_AK5PF.txt").c_str());
+		jecUnc = new JetCorrectionUncertainty((inputPrefix+"_DATA_Uncertainty_AK4PF.txt").c_str());
+		ResJetPar = new JetCorrectorParameters((inputPrefix+"_DATA_L2L3Residual_AK4PF.txt").c_str());
+		L3JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L3Absolute_AK4PF.txt").c_str());
+		L2JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L2Relative_AK4PF.txt").c_str());
+		L1JetPar  = new JetCorrectorParameters((inputPrefix+"_DATA_L1FastJet_AK4PF.txt").c_str());
 	}
 	std::vector<JetCorrectorParameters> vPar;
 	vPar.push_back(*L1JetPar);
@@ -41,7 +41,7 @@ void JECvariation::applyJEC(EventTree* tree, int scaleDownNormUp012){
 	tMET.SetPtEtaPhiM(tree->pfMET_,0.0,tree->pfMETPhi_,0.0);
 
 	for(int jetInd = 0; jetInd < tree->nJet_ ; ++jetInd){
-		if(tree->jetPt_->at(jetInd) < 20) continue;
+		if(tree->jetPt_->at(jetInd) < 30) continue;
 		JetCorrector->setJetEta(tree->jetEta_->at(jetInd));
 		JetCorrector->setJetPt(tree->jetRawPt_->at(jetInd));
 		JetCorrector->setJetA(tree->jetArea_->at(jetInd));

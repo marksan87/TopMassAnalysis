@@ -6,23 +6,28 @@
 #include<TChain.h>
 
 #include<vector>
+#define Long64_t long long
+#define Int_t long
 
 using namespace std;
 const Int_t maxP = 600;
 
 class EventTree{
 public:
+	//EventTree(EventTree *evtTree);
 	EventTree(int nFiles, char** fileNames);
 	~EventTree();
 	Long64_t GetEntries();
-	Int_t GetEntry(Long64_t entry);
-	
+	//Int_t GetEntry(Long64_t entry);
+	Int_t GetEntry(long long entry);
+
 	TChain* chain;
+
 
 	// include all variables just in case
 	Int_t    run_;
 	Long64_t event_;
-	Int_t    lumis_;
+	Int_t	 lumis_;
 	Bool_t   isData_;
 	Float_t  pdf_[7];
 	Float_t  pthat_;
@@ -39,9 +44,15 @@ public:
 	vector<int>* vtxNTrk_;
 	vector<float>* vtxNDF_;
 	vector<float>* vtxD0_;
-	Int_t    IsVtxGood_;
+	//Bool_t    hasGoodVtx_;
 	Int_t    nGoodVtx_;
 	Int_t    nVtxBS_;
+
+	ULong64_t HLTEleMuX_;
+	ULong64_t HLTEleMuXIsPrescaled_;
+
+
+	// New branches
 	vector<float>*  vtxbs_x_;
 	vector<float>*  vtxbs_y_;
 	vector<float>*  vtxbs_z_;
@@ -84,7 +95,7 @@ public:
 	vector<float>*  mcMomEta;
 	vector<float>*  mcMomPhi;
 	vector<int>*    mcIndex;
-	vector<int>*    mcDecayType;
+//	vector<int>*    mcDecayType;
 	vector<int>*    mcParentage;
 	vector<int>*    mcStatus;
 	// PU
@@ -107,8 +118,8 @@ public:
 	Float_t  pfMETmEtSig_;
 	Float_t  pfMETSig_;
 	// pfMET (Type 0+1)
-	Float_t  pfType01MET_;
-	Float_t  pfType01METPhi_;
+//	Float_t  pfType01MET_;
+//	Float_t  pfType01METPhi_;
 	Float_t  pfType01METsumEt_;
 	Float_t  pfType01METmEtSig_;
 	Float_t  pfType01METSig_;
@@ -137,7 +148,7 @@ public:
 	vector<int>*    eleCharge_;
 	vector<int>*    eleChargeConsistent_;
 	vector<float>*  eleEn_;
-	vector<float>*  eleEcalEn_;
+//	vector<float>*  eleEcalEn_;
 	vector<float>*  eleSCEn_;
 	vector<float>*  eleESEn_;
 	vector<float>*  eleVtx_x_;
@@ -163,15 +174,17 @@ public:
 	vector<float>*  eleHoverE_;
 	vector<float>*  eleHoverE12_; 
 	vector<float>*  eleEoverP_;
+	vector<float>*  eleEoverPInv_;
 	vector<float>*  elePin_;
 	vector<float>*  elePout_;
 	vector<float>*  eleTrkMomErr_;
 	vector<float>*  eleBrem_;
 	vector<float>*  eledEtaAtVtx_;
 	vector<float>*  eledPhiAtVtx_;
-	vector<float>*  eleSigmaIEtaIEta_;
+	//vector<float>*  eleSigmaIEtaIEta_;
 	vector<float>*  eleSigmaIEtaIPhi_;
 	vector<float>*  eleSigmaIPhiIPhi_;
+	vector<float>*  eleSigmaIEtaIEtaFull5x5_;
 	vector<float>*  eleEmax_;
 	vector<float>*  eleE2ndMax_;
 	vector<float>*  eleETop_;
@@ -202,9 +215,9 @@ public:
 	vector<float>*  eleSeedTime_;
 	vector<int>*    eleRecoFlag_;
 	vector<int>*    elePos_;
-	vector<int>*    eleGenIndex_;
-	vector<int>*    eleGenGMomPID_;
-	vector<int>*    eleGenMomPID_;
+//	vector<int>*    eleGenIndex_;
+//	vector<int>*    eleGenGMomPID_;
+//	vector<int>*    eleGenMomPID_;
 	vector<float>*  eleGenMomPt_;
 	vector<float>*  eleIsoTrkDR03_;
 	vector<float>*  eleIsoEcalDR03_;
@@ -218,21 +231,24 @@ public:
 	vector<float>*  eleModIsoEcal_;
 	vector<float>*  eleModIsoHcal_;
 	vector<float>*  eleChi2NDF_;
-	vector<int>*    eleMissHits_;
-	vector<float>*  eleConvDist_;
-	vector<float>*  eleConvDcot_;
-	vector<int>*    eleEtaseedAtVtx_;
+	vector<int>*    eleConvVeto_;
+	vector<int>*    eleMissHits_;   
+//	vector<float>*  eleConvDist_;
+//	vector<float>*  eleConvDcot_;
+//	vector<int>*    eleEtaseedAtVtx_;
 	vector<float>*  eleIP3D_;
 	vector<float>*  eleIP3DErr_;
-	vector<float>*  eleIDMVANonTrg_;
+//	vector<float>*  eleIDMVANonTrg_;
 	vector<unsigned short>*    eleIDbit_;
-	vector<float>*  eleIDMVATrg_;
+	vector<float>* eleIDMVA_;
+	vector<float>* eleIDMVAHZZ_;
+//	vector<float>*  eleIDMVATrg_;
 	vector<int>*    eleID2012_0_;
 	vector<int>*    eleID2012_1_;
 	vector<int>*    eleID2012_2_;
 	vector<int>*    eleID2012_3_;
 	Int_t    eleESDetId_[maxP][2];
-	Float_t  eleESHits_[maxP][3][62];
+//	Float_t  eleESHits_[maxP][3][62];
 	vector<float>* eleESEffSigmaRR_x_;
 	vector<float>* eleESEffSigmaRR_y_;
 	vector<float>* eleESEffSigmaRR_z_;
@@ -401,9 +417,9 @@ public:
 	vector<int>*    phoSeedDetId2_;
 	vector<int>*    phoRecoFlag_;
 	vector<int>*    phoPos_;
-	vector<int>*    phoGenIndex_;
-	vector<int>*    phoGenGMomPID_;
-	vector<int>*    phoGenMomPID_;
+//	vector<int>*    phoGenIndex_;
+//	vector<int>*    phoGenGMomPID_;
+//	vector<int>*    phoGenMomPID_;
 	vector<float>*  phoGenMomPt_;
 	vector<float>*  phoSCE_;
 	vector<float>*  phoSCRawE_;
@@ -419,7 +435,7 @@ public:
 	vector<int>*    phoSeedBCE_;
 	vector<int>*    phoEleVeto_;
 	Int_t    phoESDetId_[maxP][2];
-	Float_t  phoESHits_[maxP][3][62];
+//	Float_t  phoESHits_[maxP][3][62];
 	vector<float>*  phoESEffSigmaRR_x_;
 	vector<float>*  phoESEffSigmaRR_y_;
 	vector<float>*  phoESEffSigmaRR_z_;
@@ -509,9 +525,12 @@ public:
 	vector<vector<float> >*  pho_pfSLConvPos_y_;
 	vector<vector<float> >*  pho_pfSLConvPos_z_;
 	vector<vector<float> >*  pho_pfSLConvVtxZ_;
+	
+	
 	// Muon
 	Int_t nMu_;
-	vector<ULong_t> muTrg_;
+	vector<UShort_t>* muIDbit_;
+
 	vector<float>*  muEta_;
 	vector<float>*  muPhi_;
 	vector<int>*    muCharge_;
@@ -571,8 +590,14 @@ public:
 	vector<int>*    muStations_;
 	vector<int>*    muChambers_;
 	vector<float>*  muIP3D_;
-	vector<float>*  muIP3DErr_;
-	
+	//vector<float>*  muIP3DErr_;
+
+	//vector<bool>*  muIsLooseID_;
+	//vector<bool>*  muIsMediumID_;
+	//vector<bool>*  muIsTightID_;
+	//vector<bool>*  muIsSoftID_;
+	//vector<bool>*  muIsHighPtID_;
+
 	//Taus
 	Int_t nTau_;
 	// decay mode discriminators
@@ -683,14 +708,14 @@ public:
 	Float_t  PFPho_ES1clusteta_[maxP][30];
 	Float_t  PFPho_ES1clustphi_[maxP][30];
 	Float_t  PFPho_ES1clustz_[maxP][30];
-	Int_t    PFPho_ES1_stripsDetId_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsX_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsY_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsZ_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsEta_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsPhi_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsFrac_[maxP][30][30];
-	Float_t  PFPho_ES1_stripsE_[maxP][30][30];
+//	Int_t    PFPho_ES1_stripsDetId_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsX_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsY_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsZ_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsEta_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsPhi_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsFrac_[maxP][30][30];
+//	Float_t  PFPho_ES1_stripsE_[maxP][30][30];
 	Int_t    PFPho_ES1size_[maxP][30];
 	Float_t  PFPho_weightedXst_perES1clust_[maxP][30];
 	
@@ -710,14 +735,14 @@ public:
 	Float_t  PFPho_ES2clusteta_[maxP][30];
 	Float_t  PFPho_ES2clustphi_[maxP][30];
 	Float_t  PFPho_ES2clustz_[maxP][30];
-	Int_t    PFPho_ES2_stripsDetId_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsX_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsY_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsZ_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsEta_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsPhi_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsFrac_[maxP][30][30];
-	Float_t  PFPho_ES2_stripsE_[maxP][30][30];
+//	Int_t    PFPho_ES2_stripsDetId_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsX_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsY_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsZ_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsEta_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsPhi_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsFrac_[maxP][30][30];
+//	Float_t  PFPho_ES2_stripsE_[maxP][30][30];
 	Int_t    PFPho_ES2size_[maxP][30];
 	Float_t  PFPho_weightedYst_perES2clust_[maxP][30];
 	
@@ -753,7 +778,7 @@ public:
 	Float_t  PFPho_tkerreta_[maxP][20];
 	Float_t  PFPho_tkerrphi_[maxP][20];
 	Float_t  PFPho_tkerrthet_[maxP][20];
-	Float_t  PFPho_tkPos_[maxP][20][3];
+//	Float_t  PFPho_tkPos_[maxP][20][3];
 	Int_t    PFPhoIsConv_[maxP];  
 	Float_t  PFPhoTrkIsoHollowDR04_[maxP];  
 	Float_t  PFPhoEcalIsoDR04_[maxP];  
@@ -938,6 +963,13 @@ public:
 	vector<float>*  jetRawEn_;
 	vector<float>*  jetCharge_;
 	vector<float>*  jetArea_;
+	vector<float>* jetCHF_;
+	vector<float>* jetNHF_;
+	vector<float>* jetCEF_;
+	vector<float>* jetNEF_;
+//	vector<float>* jetNNeutrals_;
+//	vector<float>* jetNCharged_;
+//	vector<int>*   jetNConstituents_;
 	vector<float>*  AK8JetCHF_;
 	vector<float>*  AK8JetNHF_;
 	vector<float>*  AK8JetCEF_;
@@ -947,8 +979,7 @@ public:
 	vector<float>*  jetHFEME_;
 	vector<int>*    jetPartonID_;
 	vector<int>*    AK8Jetnconstituents_;
-	vector<float>*  jetpfCombinedInclusiveSecondaryVertexV2BJetTags_; // recommended
-	vector<float>*  jetCombinedSecondaryVtxMVABJetTags_;
+	vector<float>*  jetCSV2BJetTags_;
 	vector<float>*  jetJetProbabilityBJetTags_;
 	vector<float>*  jetJetBProbabilityBJetTags_;
 	vector<vector<float> >*  jetBetaStar_;
@@ -994,8 +1025,6 @@ public:
 	vector<vector<float> >* jetBetaExt_;
 	vector<vector<float> >* jetBetaStarCMGExt_;
 	vector<vector<float> >* jetBetaStarClassicExt_;
-	vector<float>* jetNNeutrals_;
-	vector<float>* jetNCharged_;
 	vector<bool>*  jetPFLooseId_;
 	// b-jet regression variables
 	vector<float>* jetMt_;

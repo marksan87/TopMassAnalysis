@@ -1,0 +1,127 @@
+{
+
+"mc_spring15_TT" : [
+			    832, 
+			    0, 
+			    "/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-scaledown-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM (?) ",
+			    "t#bar{t}", 
+			    633,
+			    36374853
+],
+
+"mc_spring15_TTG" : [
+			    3.697, 
+			    0,
+			    "/TTGJets_TuneCUETP8M1_13TeV-amcatnloFXFX-madspin-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM",
+			    "t#bar{t}+V", 
+			    797,
+			    4784923
+],
+
+
+"mc_spring15_TTWToLNu" : [
+			    0.2043, 
+			    0,
+			    "/TTWJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-madspin-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM", 
+			    "t#bar{t}+V", 
+			    797,
+			    252908
+],
+
+
+"mc_spring15_ST_s" : [
+			    10.32, 
+			    0,
+			    "/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM",
+			    "Single top", 
+			    618,
+			    984400
+],
+
+
+"mc_spring15_ST_t_antitop_4f" : [
+			    80.95, 
+			    0,
+			    "/ST_t-channel_antitop_4f_leptonDecays_13TeV-powheg-pythia8_TuneCUETP8M1/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM",
+			    "Single top", 
+			    618,
+			    1695400  
+],
+
+
+"mc_spring15_ST_t_top_4f" : [
+			    136.02, 
+			    0,
+			    "/ST_t-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM", 
+			    "Single top", 
+			    618,
+			    19854408 
+],
+
+
+"mc_spring15_ST_tW_antitop" : [
+			    35.85, 
+			    0,
+			    "/ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/MINIAODSIM", 
+			    "Single top", 
+			    618,
+			    1000000
+],
+
+
+"mc_spring15_ST_tW_top" : [
+			    35.85, 
+			    0,
+			    "/ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM", 
+			    "Single top", 
+			    618,
+			    995600
+],
+
+"mc_spring15_WJetsToLNu_aMCatNLO" : [
+			    61526.7, 
+			    0,
+			    "/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15DR74-Asympt25ns_MCRUN2_74_V9-v1/MINIAODSIM", 
+			    "W", 
+			    858,
+			    24151270
+],
+
+
+"mc_spring15_DYJetsToLL_m50" : [
+			    6025, 
+			    0,
+			    "/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/MINIAODSIM (?)", 
+			    "DY", 
+			    868,
+			    28747969
+],
+
+"DoubleEG_Run2015C_Oct05" : [
+			    1, 
+			    1, 
+			    "/DoubleEG/Run2015C_25ns-05Oct2015/MINIAOD", 
+			    "Data", 
+			    1,
+			    -1
+],
+
+
+"DoubleEG_Run2015D_Oct05" : [
+			    1, 
+			    1, 
+			    "/DoubleEG/Run2015D_25ns-05Oct2015/MINIAOD", 
+			    "Data", 
+			    1,
+			    -1
+],
+
+"DoubleEG_Run2015D_PR_v4" : [
+			    1, 
+			    1, 
+			    "/DoubleEG/Run2015D_25ns-05Oct2015_PR_v4_Thislineisjustacomment/MINIAOD", 
+			    "Data", 
+			    1,
+			    -1
+]
+}

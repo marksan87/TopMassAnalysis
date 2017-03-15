@@ -44,7 +44,7 @@ void HistCollect::fill_histograms(Selector* selector, EventPick* selEvent, Event
 	// find the photon category
 	bool barrel;
 	int phoInd = -1;
-	if(selEvent->Photons.size()>0){
+/*	if(selEvent->Photons.size()>0){
 		phoInd = selEvent->Photons[0];
 	}
 	else {
@@ -59,7 +59,7 @@ void HistCollect::fill_histograms(Selector* selector, EventPick* selEvent, Event
 			}
 		}
 	}
-	
+*/	
 	bool passAllTemp = selEvent->passAll;
 	// make histograms for pre-selection cuts
 	selEvent->passAll = true;
@@ -67,9 +67,9 @@ void HistCollect::fill_histograms(Selector* selector, EventPick* selEvent, Event
 	// keep the true value
 	selEvent->passAll = passAllTemp;
 
-	if(phoInd<0) return; // no good photon candidates
+/*	if(phoInd<0) return; // no good photon candidates
 	barrel = fabs(tree->phoEta_->at(phoInd)) < 1.5;
-	
+*/	
 	if(fillBarrel && barrel) histnom_barrel->fill(selector, selEvent, tree, weight);
 	if(fillEndcap && !barrel) histnom_endcap->fill(selector, selEvent, tree, weight);
 	
@@ -78,7 +78,7 @@ void HistCollect::fill_histograms(Selector* selector, EventPick* selEvent, Event
 	
 	// split by photon origin
 	bool rs = false, rb = false, fe = false, fj = false;
-	findPhotonCategory(phoInd, tree, &rs, &rb, &fe, &fj);
+//	findPhotonCategory(phoInd, tree, &rs, &rb, &fe, &fj);
 	
 	// filling
 	if(rs && fillRS){
@@ -112,11 +112,13 @@ void HistCollect::write_histograms(EventPick* selEvent, bool isMC, std::string o
 		}
 		if(fillFE){
 			if(fillMCCategSum) histnom_fe->write_histograms(outDir,selEvent->histVector);
+
 			if(fillBarrel) histnom_barrel_fe->write_histograms(outDir,emptyVec);
 			if(fillEndcap) histnom_endcap_fe->write_histograms(outDir,emptyVec);
 		}
 		if(fillFJRB){
 			if(fillMCCategSum) histnom_fjrb->write_histograms(outDir,selEvent->histVector);
+
 			if(fillBarrel) histnom_barrel_fjrb->write_histograms(outDir,emptyVec);
 			if(fillEndcap) histnom_endcap_fjrb->write_histograms(outDir,emptyVec);
 		}
@@ -143,7 +145,7 @@ void HistCollect::setFlags2D(void){
 	fillFJRB = true;
 	
 }
-
+/*
 void HistCollect::findPhotonCategory(int phoInd, EventTree* tree, bool* rs, bool *rb, bool *fe, bool *fj){
 	*rs = false;
 	*rb = false;
@@ -184,4 +186,4 @@ void HistCollect::findPhotonCategory(int phoInd, EventTree* tree, bool* rs, bool
 		if(mcEleInd >= 0 && isGoodElectron(tree, mcEleInd, phoInd)) *fe = true;
 		else *fj = true;
 	}
-}
+}*/

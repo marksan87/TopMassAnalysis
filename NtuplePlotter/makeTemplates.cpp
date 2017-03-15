@@ -7,12 +7,11 @@
 #include"Histogrammer.h"
 #include"HistCollect.h"
 #include"PUReweight.h"
-
 #include"TRandom3.h"
 // temporary solution
 #include"JECvariation.h"
+#include "BTagCalibration.h"
 //#include"JECvariationNew.cpp"
-
 //#include"/uscms_data/d2/dnoonan/LHAPDF/local/include/LHAPDF/LHAPDF.h"
 
 
@@ -56,13 +55,11 @@ int main(int ac, char** av){
 		std::cout << "usage: ./makeTemplates sampleName outputDir inputFile[s]" << std::endl;
 		return -1;
 	}
-	std::string PUfilename = "Pileup_Observed_69300.root";
+	std::string PUfilename = "PU_Reweighting_13TeV.root";
 	bool systematics = false;
 	
 	std::string inpFileName(av[3]);
-	if( inpFileName.find("ttjets_1l") != std::string::npos) top_sample_g = 1;
-	if( inpFileName.find("ttjets_2l") != std::string::npos) top_sample_g = 2;
-	if( inpFileName.find("ttjets_had") != std::string::npos) top_sample_g = 3;
+	if( inpFileName.find("ttjets") != std::string::npos) top_sample_g = 1;
 	std::cout << "top_sample: " << top_sample_g << std::endl;
 	
 	std::string outDirName(av[2]);
@@ -85,7 +82,15 @@ int main(int ac, char** av){
 	if( outDirName.find("toppt_up") != std::string::npos) {systematics=true; toppt012_g = 2;}
 	if( outDirName.find("toppt_down") != std::string::npos) {systematics=true; toppt012_g = 0;}	
 	if( outDirName.find("PDF") != std::string::npos) {systematics=true; pdfweight_g=2;}
-
+        //Reading csv file for Btagging
+        BTagCalibration calib("csvv2", "CSVV2.csv");
+        BTagCalibrationReader reader(BTagEntry::OP_LOOSE,  // operating point
+                                "central");           // systematics type
+        BTagCalibrationReader reader_up(BTagEntry::OP_LOOSE, "up");  // sys up
+        BTagCalibrationReader reader_do(BTagEntry::OP_LOOSE, "down");  // sys down
+        reader.load(&calib,               // calibration instance
+                BTagEntry::FLAV_B,    // btag flavour
+                "comb")               // measurement type
 	int pdfNum = 0;
 	if( pdfweight_g==2 ){
 	  string tempNum = "";
@@ -107,9 +112,6 @@ int main(int ac, char** av){
 	HistCollect* looseCollectNoMET = new HistCollect("1phoNoMET",std::string("top_")+av[1]);
 	//	looseCollectNoMET->fillEndcap = false;	
 	looseCollectNoMET->fillEndcap = true;	
-	//HistCollect* fourjCollect = new HistCollect("1pho4j",std::string("top4j_")+av[1]);
-	// HistCollect for tight Photon ID
-	//HistCollect* tightCollect = new HistCollect("1photight",std::string("top_")+av[1]);
 	
 	// object selectors
 	Selector* selectorLoose = new Selector();
@@ -123,13 +125,9 @@ int main(int ac, char** av){
 	if(std::string(av[2]).find("QCD") != std::string::npos){
 	        std::cout << "IS QCD" << std::endl;
 		isQCD = true;
-		//selectorLoose->mu_MVA_range[0] = -1.0;
-		//selectorLoose->mu_MVA_range[1] = -0.1;
 		selectorLoose->mu_RelIso_range[0] = 0.25;
 		selectorLoose->mu_RelIso_range[1] = 1.0;
-		//selectorLoose->ele_Iso_MVA_invert = true;
 
-		// no MC categories for data-driven QCD needed
 		looseCollect->fillRS = false;
 		looseCollect->fillFE = false;
 		looseCollect->fillFJRB = false;
@@ -142,18 +140,10 @@ int main(int ac, char** av){
 		evtPickLooseNoMET->NlooseMuVeto_le = 99.;
 
 	}
-	//Selector* selectorTight = new Selector();
-	// set up the parameters for object selectors here
-	//selectorTight->pho_ID_ind = 2; // tight ID
 	std::cout << selectorLoose->mu_RelIso_range[0] << std::endl;
 	std::cout << selectorLoose->mu_RelIso_range[1] << std::endl;
 
 	evtPickLooseNoMET->MET_cut = -1.0;
-	//evtPickLoose->veto_pho_jet_dR = 0.05;
-	//evtPickLoose->Njet_ge = 4;
-	//evtPickLoose->NBjet_ge = 2;
-	// evtPickLoose->NlooseMuVeto_le = 0;
-	// evtPickLoose->NlooseEleVeto_le = 0;
 
 	if( outDirName.find("zeroB") != std::string::npos){
 		evtPickLoose->NBjet_ge = 0;
@@ -174,19 +164,16 @@ int main(int ac, char** av){
 	if( std::string(av[1]).find("WHIZARD") != std::string::npos) WHIZARD = true;
 
 	bool MGttgamma = false;
-	if( std::string(av[1]).find("TTGamma") != std::string::npos) MGttgamma = true;
+	if( std::string(av[1]).find("ttgamma") != std::string::npos) MGttgamma = true;
 	if (MGttgamma) std::cout << "THIS IS TTGAMMA" << std::endl;
 
 	bool doOverlapRemoval = false;
 	bool doOverlapRemovalWZ = false;
 	bool doInvertedOverlapRemoval = false;
 	bool skipOverlap = false;
-	if( std::string(av[1]).find("TTJets") != std::string::npos) doOverlapRemoval = true;
-	if( std::string(av[1]).find("ZJets") != std::string::npos) doOverlapRemovalWZ = true;
-	if( std::string(av[1]).find("WJets") != std::string::npos) doOverlapRemovalWZ = true;
-	if( std::string(av[1]).find("W2Jets") != std::string::npos) doOverlapRemovalWZ = true;
-	if( std::string(av[1]).find("W3Jets") != std::string::npos) doOverlapRemovalWZ = true;
-	if( std::string(av[1]).find("W4Jets") != std::string::npos) doOverlapRemovalWZ = true;
+	if( std::string(av[1]).find("ttjets") != std::string::npos) doOverlapRemoval = true;
+	if( std::string(av[1]).find("Zjets") != std::string::npos) doOverlapRemovalWZ = true;
+	if( std::string(av[1]).find("Wjets") != std::string::npos) doOverlapRemovalWZ = true;
 	if( std::string(av[1]).find("Invert") != std::string::npos) doInvertedOverlapRemoval = true;
 	if( std::string(av[1]).find("SkipOverlap") != std::string::npos) skipOverlap = true;
 
@@ -201,16 +188,20 @@ int main(int ac, char** av){
 
 	EventTree* tree = new EventTree(ac-3, av+3);
 	double PUweight = 1.0;
+	double BTagSF = 1.0 ;
 	bool isMC = false;
 	
 	// initialize PU reweighting here
 	PUReweight* PUweighter = new PUReweight(ac-3, av+3, PUfilename);
 	
+	//initializing BtagSF here:
+	
 	tree->GetEntry(0);
 	isMC = !(tree->isData_);
+	//std::cout << " just before JEC " << std::endl;
 	JECvariation* jecvar;
-	jecvar = new JECvariation("./Summer15_25nsV6_MC", isMC);
-
+	std::cout << "error here " << std::endl;
+	jecvar = new JECvariation("./Summer15_25nsV6_MC/Summer15_25nsV6", isMC);
 	// we don't need systematics variations for Data
 	if(!isMC && systematics) {
 		std::cout << "Systematics on Data is not applied" << std::endl;
@@ -219,20 +210,16 @@ int main(int ac, char** av){
 	}
 	
 
-	//	LHAPDF::PDFSet set("CT10nnlo");
-	//	pdfs = set.mkPDFs();
-
-	// initPDFSet(1, "cteq66.LHgrid");
 
 	Long64_t nEntr = tree->GetEntries();
-	for(Long64_t entry=0; entry<nEntr; entry++){
+	for(Long64_t entry= 0; entry< nEntr; entry++){
 		if(entry%10000 == 0) std::cout << "processing entry " << entry << " out of " << nEntr << std::endl;
-		//if(entry==5000000) break;
 		tree->GetEntry(entry);
 		isMC = !(tree->isData_);
-		
+		//Btag
+
 		// apply PU reweighting
-		if(isMC) PUweight = PUweighter->getWeight(tree->nPUInfo_, tree->puBX_, tree->nPU_);
+		if(isMC) PUweight = PUweighter->getWeight(tree->nPUInfo_, tree->puBX_, tree->puTrue_);
 		
 		if(isMC && !isQCD){
 			// JEC
@@ -259,26 +246,13 @@ int main(int ac, char** av){
 		  }
 		}
 		    
-		// if( isMC && doOverlapRemoval && overlapMadGraph(tree)){
-		// 	//std::cout << "overlap!" << std::endl;
-		// 	// overlapping part, not needed
-		// 	continue;
-		// }
 		if( isMC && doOverlapRemovalWZ && overlapISRFSR(tree)){
 			continue;
 		}
-		// this part cuts MadGraph ttgamma phase space to match WHIZARD, for comparison
-		//if( isMC && MGttgamma && doOverlapRemoval && !overlapWHIZARD(tree)){
-		//	// do not need MadGraph ttgamma events that are outside WHIZARD phase space
-		//	continue;
-		//}		
 
 		selectorLoose->process_objects(tree);
-		//selectorTight->process_objects(tree);
 		evtPickLoose->process_event(tree, selectorLoose, PUweight);
 		evtPickLooseNoMET->process_event(tree, selectorLoose, PUweight);
-		//evtPickLoose4j->process_event(tree, selectorLoose, PUweight);
-		//evtPickTight->process_event(tree, selectorTight, PUweight);
 		double evtWeight = PUweight;
 		if(isMC && !isQCD){
 			// electron trigger efficiency reweighting
@@ -288,9 +262,6 @@ int main(int ac, char** av){
 		}
 		//double evtWeight = PUweight;
 		if(isMC){
-			// electron trigger efficiency reweighting
-			//evtWeight *= getEleEff(tree, evtPickLoose);
-			// b-tag SF reweighting
 			evtWeight *= getBtagSF(tree, evtPickLoose);
 		}
 		// top pt reweighting
@@ -298,30 +269,18 @@ int main(int ac, char** av){
 			evtWeight *= topPtWeight(tree);
 		}
 
-		// if(isMC && pdfweight_g!=1){
-		  
-		//   double tempWeight = pdfWeight(tree,pdfNum);
-		//   evtWeight *= tempWeight;
-		//   // cout << tempWeight << endl;
-		// }
-
-		if(isMC && MGttgamma){
-		  double tempWeight = WjetsBRreweight(tree);
-		  evtWeight *= tempWeight;
-		}
 
 		// fill the histograms
-		//std::cout << "fill, weight " << evtWeight << "  passPresel " << evtPickLoose->passPreSel << std::endl;
+		// if passes PreSel:
+		 
 		looseCollectNoMET->fill_histograms(selectorLoose, evtPickLooseNoMET, tree, isMC, evtWeight);
- 
 		looseCollect->fill_histograms(selectorLoose, evtPickLoose, tree, isMC, evtWeight);
-		//fourjCollect->fill_histograms(selectorLoose, evtPickLoose4j, tree, isMC, evtWweight);
+		
 	}
 	
 	looseCollect->write_histograms(evtPickLoose, isMC, av[2]);
 	looseCollectNoMET->write_histograms(evtPickLooseNoMET, isMC, av[2]);
 
-	//fourjCollect->write_histograms(evtPickLoose4j, isMC, av[2]);
 
 	std::cout << "Average PU weight " << PUweighter->getAvgWeight() << std::endl;
 	evtPickLoose->print_cutflow();
@@ -616,6 +575,7 @@ double bSFerr(double jetpt){
 	int ptInd = 0;
 	if( btagvar012_g == 1) return 0.0;
 
+
 	for(int ipt=0; ipt<16; ipt++) 
 		if(jetpt > ptmax[ipt]) ptInd++;
 	
@@ -640,66 +600,41 @@ double getBtagSF(EventTree* tree, EventPick* evt){
 	double jeteta;
 	int jetflavor;
 	double SFb;
-
+        float MaxBJetPt = 669.9, MaxLJetPt = 999.9;
 	if(evt->bJets.size() == 0) return 1.0;
 
 	for(std::vector<int>::const_iterator bjetInd = evt->bJets.begin(); bjetInd != evt->bJets.end(); bjetInd++){
-		jetpt = tree->jetPt_->at(*bjetInd);
-		jeteta = fabs(tree->jetEta_->at(*bjetInd));
+		jetpt = tree->jetPt_->at(*bjetInd);bool DoubleUncertainty = false;
+		jeteta = tree->jetEta_->at(*bjetInd)
 		jetflavor = abs(tree->jetPartonID_->at(*bjetInd));
+	
+		if (jetpt > MaxBJetPt){
+			JetPt = MaxBJetPt; 
+			DoubleUncertainty = true;
+			} 
+		if(jetpt >  MaxLJetPt ){
+			JetPt_c = maxLJetPt;
+			DoubleUncertainty = true;
+		}
+		jeteta = fabs(tree->jetEta_->at(*bjetInd));
+		double jet_scalefactor = reader.eval(BTagEntry::FLAV_B, jeteta, JetPt); 
+		double jet_scalefactor_c = reader.eval(BTagEntry::FLAV_C,jeteta, JetPt_c); 
+      		double jet_scalefactor_up =  reader_up.eval(BTagEntry::FLAV_B, jeteta, JetPt); 
+      		double jet_scalefactor_do =  reader_do.eval(BTagEntry::FLAV_B, jeteta, JetPt); 
+		 if (DoubleUncertainty) {
+       			  jet_scalefactor_up = 2*(jet_scalefactor_up - jet_scalefactor) + jet_scalefactor; 
+         		  jet_scalefactor_do = 2*(jet_scalefactor_do - jet_scalefactor) + jet_scalefactor; 
+      			}
 		
-		if(jetflavor == 5) SFb = bJetSF(jetpt);
-		else if( jetflavor == 4) SFb = cjetSF(jetpt);
-		else SFb = lfJetSF(jetpt, jeteta);
+		if(jetflavor == 5) SFb = jet_scalefactor;
+		else if( jetflavor == 4) SFb = jet_scalefactor_c;
+	//	else SFb = lfJetSF(jetpt, jeteta);
 	
 		prod *= 1.0 - SFb;
 	}
 	return 1.0 - prod;
 }
 
-// double pdfWeight(EventTree* tree, int pdfNum){
-//   if( pdfweight_g==1){ return 1.;  } 
-//   if (pdfNum >= pdfs.size() || pdfNum < 1){return 1.;}
-
-//   double id1 = tree->pdf_[0];
-//   double id2 = tree->pdf_[1];
-//   double x1  = tree->pdf_[2];
-//   double x2  = tree->pdf_[3];
-//   double q   = tree->pdf_[6];
-
-//   double pdfweightMin = 999.;
-//   double pdfweightMax = 0.;
-
-//   double xpdf1 = pdfs[0]->xfxQ(id1, x1, q);
-//   double xpdf2 = pdfs[0]->xfxQ(id2, x2, q);
-
-//   // LHAPDF::usePDFMember(1,0);
-//   // double xpdf1 = LHAPDF::xfx(1, x1, q, id1);
-//   // double xpdf2 = LHAPDF::xfx(1, x2, q, id2);
-//   double w0 = xpdf1 * xpdf2;
-
-//   double xpdf1_new = pdfs[pdfNum]->xfxQ(id1, x1, q);
-//   double xpdf2_new = pdfs[pdfNum]->xfxQ(id2, x2, q);
-//   // LHAPDF::usePDFMember(1,0);
-//   // double xpdf1_new = LHAPDF::xfx(1, x1, q, id1);
-//   // double xpdf2_new = LHAPDF::xfx(1, x2, q, id2);
-//   double weight = xpdf1_new * xpdf2_new / w0;
-//   return weight;
-
-//   // for(int i=1; i < pdfs.size(); ++i){
-//   //   double xpdf1_new = pdfs[i]->xfxQ(id1, x1, q);
-//   //   double xpdf2_new = pdfs[i]->xfxQ(id2, x2, q);
-//   //   // LHAPDF::usePDFMember(1,0);
-//   //   // double xpdf1_new = LHAPDF::xfx(1, x1, q, id1);
-//   //   // double xpdf2_new = LHAPDF::xfx(1, x2, q, id2);
-//   //   double weight = xpdf1_new * xpdf2_new / w0;
-//   //   if(weight > pdfweightMax) pdfweightMax=weight;
-//   //   if(weight < pdfweightMin) pdfweightMin=weight;
-//   // }
-
-//   // if( pdfweight_g==0){ return pdfweightMin;}
-//   // if( pdfweight_g==2){ return pdfweightMax;}
-// }
 
 
 double WjetsBRreweight(EventTree* tree){
@@ -735,7 +670,6 @@ double WjetsBRreweight(EventTree* tree){
       else {
 	countLeps += 1;
       }
-      //      std::cout << tree->mcPID->at(mcInd) << "\t" << tree->mcMomPID->at(mcInd) << "\t" << tree->mcGMomPID->at(mcInd) << "\t" << tree->mcMomPt->at(mcInd) << "\t" << tree->mcIndex->at(mcInd) << std::endl;
     }
   }
   double reweight=1.;

@@ -7,6 +7,7 @@
 #include<string>
 #include<TFile.h>
 #include<TH1F.h>
+#include<TH1D.h>
 #include<TH2F.h>
 #include<TMath.h>
 #include<TLorentzVector.h>
