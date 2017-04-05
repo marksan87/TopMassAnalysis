@@ -1,8 +1,10 @@
 #include"EventPick.h"
 
-const bool use_dilepton_triggers = true; 
-const bool use_DZ_triggers = true;
-const bool use_new_triggers = false;
+const bool use_data_triggers = false;
+const bool use_mc_triggers = false;
+const bool runH = false;    // Disable non-DZ triggers for Run H
+
+const bool only_new_triggers = true;
 
 double secondMinDr(int myInd, const EventTree* tree);
 
@@ -99,16 +101,20 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 	// in ggNtuplizer_globalEvent.cc. Each trigger flag is represented by a bitshift of this variable.		    //
 	//														    //
 	// https://twiki.cern.ch/twiki/bin/viewauth/CMS/TopTrigger#Run2016B_C_and_D_25_ns_data_with			    //
-	// Dilepton eu triggers for Run2016B, C and D 25 ns data with RunIISpring16reHLT80 MC				    //
-	// HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v OR HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v	    //
+	// Dilepton eu triggers for Run2016 B-H 23Sep2016ReReco data with RunIISummer16 Moriond17_80X MC		    //
 	//														    //
 	// HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v  23								    //
 	// HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_v  25								    //
 	//														    //
 	// HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v  24							    //
 	// HLT_Mu23_TrkIsoVVL_Ele8_CaloIdL_TrackIdL_IsoVL_DZ_v  26							    //
+	//														    //
+	// HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v     51							    //
+	// HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v  52							    //
+	// HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_v     53							    //
+	// HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v  54							    //
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+/*	
 	if (use_dilepton_triggers) {
 	     passTriggers |= (tree->HLTEleMuX_ >> 23 & 1 ) | (tree->HLTEleMuX_ >> 25 & 1);
 	}
@@ -117,6 +123,34 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 	}
 	if (use_new_triggers) {
 	    passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) | (tree->HLTEleMuX_ >> 52 & 1) | (tree->HLTEleMuX_ >> 53 & 1) | (tree->HLTEleMuX_ >> 54 & 1);
+	}
+*/
+	if (only_new_triggers) {
+	    passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) |
+			    (tree->HLTEleMuX_ >> 52 & 1) |
+			    (tree->HLTEleMuX_ >> 53 & 1) |
+			    (tree->HLTEleMuX_ >> 54 & 1);
+
+	}
+
+	if (use_data_triggers) {
+	    passTriggers |= (tree->HLTEleMuX_ >> 52 & 1) | 
+			    (tree->HLTEleMuX_ >> 54 & 1) |
+			    (tree->HLTEleMuX_ >> 24 & 1);
+
+	    if (!runH) {
+		passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) |
+				(tree->HLTEleMuX_ >> 53 & 1) | 
+				(tree->HLTEleMuX_ >> 23 & 1);
+	    }
+	}
+
+	if (use_mc_triggers) {
+	    passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) | 
+			    (tree->HLTEleMuX_ >> 52 & 1) |
+			    (tree->HLTEleMuX_ >> 23 & 1) |
+			    (tree->HLTEleMuX_ >> 53 & 1) |
+			    (tree->HLTEleMuX_ >> 54 & 1);
 	}
 
 	// DEPRICATED

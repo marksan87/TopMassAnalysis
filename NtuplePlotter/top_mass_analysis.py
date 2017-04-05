@@ -7,10 +7,62 @@ import json
 import pickle
 import random
 import ROOT
-from ROOT import TH1F, TLorentzVector
+from ROOT import TH1F, TH2F, TFile, TLorentzVector
 #from pileup import *
 from PyleupRW import PyleupRW
 from subprocess import Popen, PIPE
+
+from roccor import RoccoR   # Rochester muon corrections
+rc = RoccoR("../Roc_muon_corrections/rcdata.2016.v3")
+
+
+eleID_SF_path =    "../lepSF/Ele_MedID_egammaEffi.txt_EGM2D.root"
+eleReco_SF_path =  "../lepSF/Ele_Reco_egammaEffi.txt_EGM2D.root"
+muID_SF_BF_path =  "../lepSF/Muon_TightID_EfficienciesAndSF_BCDEF.root"
+muID_SF_GH_path =  "../lepSF/Muon_TightID_EfficienciesAndSF_GH.root"
+muIso_SF_BF_path = "../lepSF/Muon_Isolation_EfficienciesAndSF_BCDEF.root"
+muIso_SF_GH_path = "../lepSF/Muon_Isolation_EfficienciesAndSF_GH.root"
+muTrack_SF_path =  "../lepSF/Muon_Tracking_EfficienciesAndSF_BCDEFGH.root"
+
+ele23_SF_path =    "../lepSF/triggerSFs/HLT_EleMuLegHigPt.root"
+ele8_SF_path =     "../lepSF/triggerSFs/HLT_MuEleLegLowPt.root"
+mu23_SF_path =     "../lepSF/triggerSFs/IsoMu23_275001-275783.root"
+mu8_SF_path =      "../lepSF/triggerSFs/IsoMu8_275001-275783.root"
+
+eleID_file = TFile.Open(eleID_SF_path)
+eleID_SF = eleID_file.Get("EGamma_SF2D")	# TH2F
+
+eleReco_file = TFile.Open(eleReco_SF_path)
+eleReco_SF = eleReco_file.Get("EGamma_SF2D")
+
+muID_BF_file = TFile.Open(muID_SF_BF_path)
+muID_SF_BF = muID_BF_file.Get("MC_NUM_TightID_DEN_genTracks_PAR_pt_eta/abseta_pt_ratio")
+
+muID_GH_file = TFile.Open(muID_SF_GH_path)
+muID_SF_GH = muID_GH_file.Get("MC_NUM_TightID_DEN_genTracks_PAR_pt_eta/abseta_pt_ratio")
+
+muIso_BF_file = TFile.Open(muIso_SF_BF_path)
+muIso_SF_BF = muIso_BF_file.Get("TightISO_TightID_pt_eta/abseta_pt_ratio")
+
+muIso_GH_file = TFile.Open(muIso_SF_GH_path)
+muIso_SF_GH = muIso_GH_file.Get("TightISO_TightID_pt_eta/abseta_pt_ratio")
+
+# Muon tracking SF stored in TGraphAsymmErrors (1D)
+muTrack_SF_file = TFile.Open(muTrack_SF_path)
+muTrack_SF = muTrack_SF_file.Get("ratio_eff_aeta_dr030e030_corr")
+
+
+ele23_SF_file = TFile.Open(ele23_SF_path)
+ele23_SF = ele23_SF_file.Get("SF")
+
+ele8_SF_file = TFile.Open(ele8_SF_path)
+ele8_SF = ele23_SF_file.Get("SF")
+
+mu23_SF_file = TFile.Open(mu23_SF_path)
+mu23_SF = mu23_SF_file.Get("SF")
+
+mu8_SF_file = TFile.Open(mu8_SF_path)
+mu8_SF = mu8_SF_file.Get("SF")
 
 # Needed for b tagging efficency
 #ROOT.gSystem.Load('libCondFormatsBTagObjects')
@@ -24,7 +76,7 @@ random.seed()
 #ROOT.gSystem.Load('libCondFormatsBTagObjects') 
 
 debug = False 
-debug_iter = 100
+debug_iter = 10
 
 
 use_strict_lep_selection = True	    # Require the leading leptons to be an eu pair
@@ -43,6 +95,10 @@ JER_var_type = STYPE.NORM
 # Selection Cuts
 ele_pt_cut = 25
 ele_eta_cut = 2.4
+ele_relIso_cut = [0.0695, 0.0821]
+ele_D0_cut = [0.05, 0.10]
+ele_Dz_cut = [0.10, 0.20]
+
 
 mu_pt_cut = 25
 mu_eta_cut = 2.4
@@ -55,33 +111,18 @@ jet_eta_cut = 2.4
 
 # Total integrated luminosity for Sep2016 Rereco B-H
 luminosity = 35861.0 # 1/pb
-
+lumiBF = 19715.0
+lumiGH = 16146.0
 
 ###################################################################
 # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation80X  #
-# B tagging discriminator WPs
-# Loose:  0.460   Mistag rate: 10%
-# Medium: 0.800   Mistag rate: 1%
-# Tight:  0.935   Mistag rate: 0.1%
+# B tagging discriminator WPs                                     #
+# Loose:  0.460   Mistag rate: 10%                                #
+# Medium: 0.800   Mistag rate: 1%                                 #
+# Tight:  0.935   Mistag rate: 0.1%                               #
+###################################################################
 btag_disc = 0.800
 
-####################################################################################################################
-# Cut-based Electron ID Medium WP
-# https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2#Spring15_selection_25ns
-# 
-# cut[barrel, endcap]
-# barrel: |eta supercluster| <= 1.479
-# endcap: 1.479 < |eta supercluster| < 2.5     
-ele_full5x5_sigmaIetaIeta_cut = [0.00998, 0.0298];
-ele_dEtaIn_cut = [0.00311, 0.00609];
-ele_dPhiIn_cut = [0.103, 0.045];
-ele_HoverE_cut = [0.253, 0.0878];
-ele_relIso_cut = [0.0695, 0.0821];
-ele_ooEmooP_cut = [0.134, 0.13];
-ele_d0_cut = [0.05, 0.10];
-ele_dz_cut = [0.10, 0.20];
-ele_missingInnerHits_cut = [1, 1];
-####################################################################################################################
 
 # Region 0: barrel
 # Region 1: endcap
@@ -110,12 +151,13 @@ def ele_effective_area(SCEta):
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/JetResolution#JER_Scaling_factors_and_Uncertai
 # Core resolution scaling factor SF (measured data/MC resolution ration) for the JER scaling 
 # correction method for smearing reconstructed jets
+# 80X (2016 BCD+GH PromptReco
 def JER_SF(jetEta, sys_type):
     eta = abs(jetEta)
 
-    corr   = [1.122, 1.167, 1.168, 1.029, 1.115, 1.041, 1.167, 1.094, 1.168]
-    corrUp = [1.148, 1.215, 1.214, 1.095, 1.118, 1.103, 1.253, 1.187, 1.288]
-    corrDn = [1.096, 1.119, 1.122, 0.963, 1.112, 0.979, 1.081, 1.001, 1.048]
+    corr   = [1.109, 1.138, 1.114, 1.123, 1.084, 1.082, 1.140, 1.067, 1.177]
+    corrUp = [1.117, 1.151, 1.127, 1.147, 1.095, 1.117, 1.187, 1.120, 1.218]
+    corrDn = [1.101, 1.125, 1.101, 1.099, 1.073, 1.047, 1.093, 1.014, 1.136]
 
     region = 0
     if eta >= 0.5: region += 1
@@ -189,7 +231,6 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     e_sum_bins = [20, 50, 80, 110, 140, 170, 200, 230, 260, 290, 320, 350, 380, 410, 440, 470, 500]
     pt_sum_bins = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]
     flavor_bins = [0, 1, 2, 3]
-    #pileup_weight_bins = [-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
     pileup_weight_bins = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
 
 
@@ -266,7 +307,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 				    
     print "About to open file %s" % (inFileURL)
    
-    fIn=ROOT.TFile.Open(inFileURL)
+    fIn = TFile.Open(inFileURL)
 
     print "%s opened successfully!" % (inFileURL)
 
@@ -278,12 +319,11 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     # If xsec == None then this is a data file, otherwise it is mc
     isData = True if xsec == None else False
 
-
     # For MC only:
-    if mc_file_list is not None: pileupWeighter = PyleupRW(mc_file_list=mc_file_list, pileupFile=pileupFile)
-
+    if mc_file_list is not None: 
+	pileupWeighter = PyleupRW(mc_file_list=mc_file_list, pileupFile=pileupFile)
     
-
+    
     # Total of all selected leptons/jets after all cuts are applied
     totalEle = []
     totalMu = []
@@ -298,6 +338,8 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     puWeightSum = 0
     puEvents = 0
 
+
+
     totalEntries=tree.GetEntriesFast()
     print "Total entries in %s: %s" % (inFileURL, totalEntries)
     totalIterations = min(debug_iter, totalEntries) if debug else totalEntries
@@ -307,10 +349,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     if tree.isData:
         weight = 1
     else:
-        xsec_weight = 1.0 * luminosity * xsec / n_mc_events
-        if inFileURL == "/uscms_data/d1/msaunder/skims_2016/full/mc_spring16_TT.root" and debug == True:
-	    print "TT  xsec %s     n_mc_events %s    luminosity %s" % ( xsec, n_mc_events, luminosity )
-	    print "TT xsec_weight = ", xsec_weight
+        xsec_weight = 1.0 * xsec / n_mc_events
     
     for i in xrange(0, totalIterations):   
 	if i%100==0 : 
@@ -336,25 +375,18 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	_jetDict = {}
 	_bjetDict = {}
 
-	weight = 1
+	weight = 1.0
 
-	    #print "About to calculate pileup weight with ", pileupWeighter
-	    
-	    #p_vi_assign(_puBX, tree.puBX)
-	    #p_vf_assign(_puTrue, tree.puTrue)
-
-	    #pileup_weight = pileupWeighter.getWeight(tree.nPUInfo, _puBX, _puTrue)
 	if not tree.isData:
 	    pileup_weight = pileupWeighter.getWeight(tree.nPUInfo, tree.puBX, tree.puTrue)
 	    if pileup_weight != 1.0:
 		puWeightSum += pileup_weight
 		puEvents += 1
-	
 
-	    weight = pileup_weight * xsec_weight
+	    weight = 1.0 * pileup_weight * xsec_weight
 	
 	
-	histos["vertex_mult_raw"].Fill(tree.nVtx, weight)
+	histos["vertex_mult_raw"].Fill(tree.nVtx, 1.0 if tree.isData else weight * luminosity)
 
 	ele = TLorentzVector()
 	mu = TLorentzVector()
@@ -374,8 +406,10 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    # Impose selection cuts	
 	    if (tree.elePt[ele_n] > ele_pt_cut
 		and ROOT.TMath.Abs(tree.eleEta[ele_n]) < ele_eta_cut 
-		and bool(tree.eleIDbit[ele_n]>>2 & 1)  # Medium ele cut
-	        and ele_relIso < ele_relIso_cut[region]):
+		and bool(tree.eleIDbit[ele_n] >> 2 & 1)  # Medium ele cut
+	        and ele_relIso < ele_relIso_cut[region]
+		and tree.eleD0[ele_n] < ele_D0_cut[region]
+		and tree.eleDz[ele_n] < ele_Dz_cut[region]):
 		
 		    nElectrons += 1
 		    lepton_mult += 1	
@@ -393,6 +427,12 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
 	# Process muons
 	for mu_n in xrange(0, tree.nMu):
+	    # Rochester muon corrections
+	    if tree.isData:
+		tree.muPt[mu_n] *= rc.kScaleDT(tree.muCharge[mu_n], tree.muPt[mu_n], tree.muEta[mu_n], tree.muPhi[mu_n])
+	    else:
+		tree.muPt[mu_n] *= rc.kScaleAndSmearMC(tree.muCharge[mu_n], tree.muPt[mu_n], tree.muEta[mu_n], tree.muPhi[mu_n], tree.muTrkLayers[mu_n], random.random(), random.random()) 
+
 	    mu_relIso = ( tree.muPFChIso[mu_n] + max(0., tree.muPFNeuIso[mu_n] + tree.muPFPhoIso[mu_n] - 0.5 * tree.muPFPUIso[mu_n]) ) / tree.muPt[mu_n]
 
 	    if (tree.muPt[mu_n] > mu_pt_cut
@@ -448,6 +488,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    eu_pt = 0
 	    ee_pt = 0
 	    uu_pt = 0
+	    diag_weight = xsec_weight * pileup_weight * luminosity if not tree.isData else 1.0
 
             if len(goodEleList) > 0:
                 e0_pt = (goodEleList[0])[1] # Leading ele pt (if exists)
@@ -464,25 +505,25 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    uu_pt = mu0_pt + mu1_pt
 
 	    if eu_pt > ee_pt and eu_pt > uu_pt:
-		histos["diag_flavor_mult"].Fill(0, weight)
+		histos["diag_flavor_mult"].Fill(0, diag_weight)
 		None
 
 	    elif ee_pt > uu_pt:
-		histos["diag_flavor_mult"].Fill(1, weight)
+		histos["diag_flavor_mult"].Fill(1, diag_weight)
 		None
 
 	    else:
-		histos["diag_flavor_mult"].Fill(2, weight)
+		histos["diag_flavor_mult"].Fill(2, diag_weight)
 		None
 
 	    numEle = len(goodEleList)
 	    numMu = len(goodMuList)
-	    histos["diag_lepton_mult"].Fill(numEle + numMu, weight)
+	    histos["diag_lepton_mult"].Fill(numEle + numMu, diag_weight)
 	    if numEle + numMu > 2:
-		histos["diag_lepton_high_mult"].Fill(numEle + numMu, weight)
+		histos["diag_lepton_high_mult"].Fill(numEle + numMu, diag_weight)
 		None
 
-	    histos["diag_vertex_mult"].Fill(tree.nVtx, weight)
+	    histos["diag_vertex_mult"].Fill(tree.nVtx, diag_weight)
 
 	    ev = TLorentzVector()
 	    mv = TLorentzVector()
@@ -493,19 +534,19 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 		for e in goodEleList:
 		    ev.SetPtEtaPhiM(tree.elePt[e[0]], tree.eleEta[e[0]], tree.elePhi[e[0]], 0.)
 
-		    histos["diag_ele_pt"].Fill(ev.Pt(), weight)
-		    histos["diag_ele_eta"].Fill(ROOT.TMath.Abs(ev.Eta()), weight)
-		    histos["diag_ele_eta_signed"].Fill(ev.Eta(), weight)
-		    histos["diag_ele_sc_eta"].Fill(ROOT.TMath.Abs(tree.eleSCEta[e[0]]), weight)
-		    histos["diag_ele_sc_eta_signed"].Fill(tree.eleSCEta[e[0]], weight)
+		    histos["diag_ele_pt"].Fill(ev.Pt(), diag_weight)
+		    histos["diag_ele_eta"].Fill(ROOT.TMath.Abs(ev.Eta()), diag_weight)
+		    histos["diag_ele_eta_signed"].Fill(ev.Eta(), diag_weight)
+		    histos["diag_ele_sc_eta"].Fill(ROOT.TMath.Abs(tree.eleSCEta[e[0]]), diag_weight)
+		    histos["diag_ele_sc_eta_signed"].Fill(tree.eleSCEta[e[0]], diag_weight)
 
 	    if len(goodMuList) > 0:
 		for m in goodMuList:
 		    mv.SetPtEtaPhiM(tree.muPt[m[0]], tree.muEta[m[0]], tree.muPhi[m[0]], 0.)
 
-		    histos["diag_mu_pt"].Fill(mv.Pt(), weight)
-		    histos["diag_mu_eta"].Fill(ROOT.TMath.Abs(mv.Eta()), weight)
-		    histos["diag_mu_eta_signed"].Fill(mv.Eta(), weight)
+		    histos["diag_mu_pt"].Fill(mv.Pt(), diag_weight)
+		    histos["diag_mu_eta"].Fill(ROOT.TMath.Abs(mv.Eta()), diag_weight)
+		    histos["diag_mu_eta_signed"].Fill(mv.Eta(), diag_weight)
 
 	    jmult = 0
 	    if len(goodJetList) > 0:
@@ -513,10 +554,10 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 		    jv.SetPtEtaPhiM(tree.jetPt[j[0]], tree.jetEta[j[0]], tree.jetPhi[j[0]], 0.)
 		    jmult += 1
 
-		    histos["diag_jet_pt"].Fill(jv.Pt(), weight)
-		    histos["diag_jet_eta"].Fill(jv.Eta(), weight)
+		    histos["diag_jet_pt"].Fill(jv.Pt(), diag_weight)
+		    histos["diag_jet_eta"].Fill(jv.Eta(), diag_weight)
 
-		histos["diag_jet_mult"].Fill(jmult, weight)
+		histos["diag_jet_mult"].Fill(jmult, diag_weight)
 
 	    bjmult = 0
 	    if len(goodBJetList) > 0:
@@ -524,10 +565,10 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 		    bv.SetPtEtaPhiM(tree.jetPt[bj[0]], tree.jetEta[bj[0]], tree.jetPhi[bj[0]], 0.)
 		    bjmult += 1
 		    
-		    histos["diag_bjet_pt"].Fill(bv.Pt(), weight)
-		    histos["diag_bjet_eta"].Fill(bv.Eta(), weight)
+		    histos["diag_bjet_pt"].Fill(bv.Pt(), diag_weight)
+		    histos["diag_bjet_eta"].Fill(bv.Eta(), diag_weight)
 
-		histos["diag_bjet_mult"].Fill(bjmult, weight)
+		histos["diag_bjet_mult"].Fill(bjmult, diag_weight)
 	    
 
 	#############################
@@ -593,8 +634,50 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    if ll.M() > 20:    # Cut on invariant mass of the lepton pair	
 		if len(goodJetList) > 0:	    # At least 1 jet
 		    if len(goodBJetList) > 0:  # At least 1 b tagged jet 
-
 			totalGoodEntries += 1
+
+			if not tree.isData:
+			    # Compute lepton scale factors
+			    # Ele SFs stored in 2D histogram: (x,y) = (eta_sc, pt)
+			    eleSCEta = tree.eleSCEta[e_ind]
+			    elePt = tree.elePt[e_ind]
+			    eleSF  = eleID_SF.GetBinContent(eleID_SF.FindBin(eleSCEta, min(150.0, elePt)))
+			    eleSF *= eleReco_SF.GetBinContent(eleReco_SF.FindBin(eleSCEta, min(150.0, elePt)))
+			    
+			    if eleSF == 0.0: print "eleSF = 0, SCEta = ", eleSCEta, "  Pt = ", elePt
+			    weight *= eleSF
+			    
+			    muEta = tree.muEta[mu_ind]
+			    muAEta = abs(muEta)
+			    muPt = tree.muPt[mu_ind]
+			    # Mu SFs stored in 2D histogram: (x,y) = (abs(eta), pt)
+			    muBF_SF  = muID_SF_BF.GetBinContent(muID_SF_BF.FindBin(muAEta, min(119.9, muPt)))
+			    muBF_SF *= muIso_SF_BF.GetBinContent(muIso_SF_BF.FindBin(muAEta, min(119.9, muPt)))
+			    muGH_SF  = muID_SF_GH.GetBinContent(muID_SF_GH.FindBin(muAEta, min(119.9, muPt)))
+			    muGH_SF *= muIso_SF_GH.GetBinContent(muIso_SF_GH.FindBin(muAEta, min(119.9, muPt)))
+			    if muBF_SF == 0.0: print "muBF_SF = 0!"
+			    if muGH_SF == 0.0: print "muGH_SF = 0!"
+
+			    muTrkSF = muTrack_SF.Eval(muAEta)
+			    if muTrkSF == 0.0: print "muTrkSF = 0, muAEta = ", muAEta
+			    
+
+			    mu8ele23_SF = 0.0
+			    mu23ele8_SF = 0.0
+			    if (tree.HLTEleMuX >> 23 & 1) | (tree.HLTEleMuX >> 24 & 1):
+				mu8ele23_SF = mu8_SF.GetBinContent(mu8_SF.FindBin(muEta, min(199.9, muPt))) * \
+					  ele23_SF.GetBinContent(ele23_SF.FindBin(eleSCEta, min(99.9, elePt)))
+
+			    if (tree.HLTEleMuX >> 25 & 1) | (tree.HLTEleMuX >> 26 & 1):
+				mu23ele8_SF = mu23_SF.GetBinContent(mu23_SF.FindBin(muEta, min(199.9, muPt))) * \
+					  ele8_SF.GetBinContent(ele8_SF.FindBin(eleSCEta, min(99.9, elePt)))
+			   
+			    trigSF = max(mu8ele23_SF, mu23ele8_SF)
+			    #print "trigSF = ", trigSF
+			    weight *= (lumiBF * muBF_SF + lumiGH * muGH_SF) * muTrkSF * trigSF
+
+			    
+			    
 			histos["pt_pos"].Fill(lp.Pt(), weight)
 			histos["pt_ll"].Fill(ll.Pt(), weight)
 			histos["E_pos"].Fill(lp.E(), weight)
@@ -724,28 +807,6 @@ def main():
         mc_file_list.append(inFileURL)
 	
 
-#	for n in xrange(0, num_files):
-#	    inFileURL = "%s/%s/%s_%d.root" % (opt.inDir, sample, sample, n)
-#	    mc_file_list.append(inFileURL)
-
-
-    ### Only needed for swig library class
-    # mc_file_list is a list of unicode strings. convert to list of ascii strings before passing to PUReweight constructor
-    # mc_ascii_list = []
-    # for entry in mc_file_list: mc_ascii_list.append(entry.encode('ascii', 'replace'))
-    
-    #puWeighter = PUReweight(len(mc_ascii_list), mc_ascii_list, opt.puF)
-    #pileupWeighter = None
-    #puWeighter = PyleupRW(mc_file_list, opt.puF)
-    #print puWeighter
-    #h = puWeighter.getPUweightHist()
-    #print h
-    #newWeighter = PUReweight(p_th1d_value(h))
-    #print newWeighter
-    #h = p_th1d_value(puWeighter.getPUweightHist())
-    #print h.GetEntries()
-    #print h
-
     for index, (sample, sampleInfo) in enumerate(samplesList):
         #inFileURL  = "%s/%s.root" % (opt.inDir,sample)
         #if not os.path.isfile(inFileURL): continue
@@ -760,14 +821,8 @@ def main():
     if opt.njobs == 0:
         for inFileDir, inFileName, outFileURL, mc_file_list, xsec, n_mc_events in taskList:
             runAnalysis(inFileDir=inFileDir, inFileName=inFileName, numFiles=1, outFileURL=outFileURL, pileupFile=opt.puF, xsec=xsec, n_mc_events=n_mc_events)
-    else:
+    else:  
 	from multiprocessing import Pool
-	#from multiprocessing.pool import ApplyResult
-	#pool = Pool(opt.njobs)
-	#async_results = [pool.apply_async(runAnalysis, t) for t in taskList]
-	#pool.close()
-	#map(ApplyResult.wait, async_results)
-        #lst_results = [r.get() for r in async_results]
 	pool = Pool(opt.njobs)	
 	pool.map(runAnalysisPacked,taskList)
 

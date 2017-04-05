@@ -125,7 +125,6 @@ int main(int ac, char** av){
 	evtPick->print_cutflow();	
 	cout<<"Total events that passed pre-selection: "<<totalPassedPreSel<<"/"<<nEntr<<endl<<endl;
 	std::map<std::string, TH1F*> histMap;
-	cout<<"About to enter copy histograms"<<endl;
 
 	// copy histograms
 	for(int fileInd = 2; fileInd < ac; ++fileInd){
@@ -154,18 +153,7 @@ int main(int ac, char** av){
 		it->second->SetDirectory(ggDir);
 		it->second->Write();
 	}
-	cout<<"Closing outFile"<<endl;
 	
-	//if (outFile->IsZombie()) { cout<<"Outfile is zombie!"<<endl; }
-//	if (outFile->IsOpen()) {
-//	    cout<<"Outfile still open. Attempting to flush..."<<endl;
-	    //outFile->Flush(); 
-//	    cout<<"Flushed successfully!"<<endl;
-//	}
-
-//	outFile->Flush();
 	outFile->Close(); 
-	cout<<"Outfile closed";
-
 	return 0;
 }

@@ -42,13 +42,13 @@ class Plot(object):
         self.mc = {}
         self.dataH = None
         self.data = None
-        self._garbageList = []
+	self.totMC = None
+	self._garbageList = []
         #self.plotformats = ['pdf','png']
         self.plotformats = ['png']
 	self.savelog = False
         self.ratiorange = (0.46,1.54)
-	#self.mfb = MyFooBar(3)
-	#self.mfb.doThis(7)
+
 
     def add(self, h, title, color, isData):
         h.SetTitle(title)
@@ -84,11 +84,14 @@ class Plot(object):
     def finalize(self):
         self.data = convertToPoissonErrorGr(self.dataH)
 
+    # Writes histograms to plotter.root
     def appendTo(self,outUrl):
         outF = ROOT.TFile.Open(outUrl,'UPDATE')
         if not outF.cd(self.name):
             outDir = outF.mkdir(self.name)
             outDir.cd()
+	if self.totMC is not None:
+	    self.totMC.Write(self.totMC.GetName(), ROOT.TObject.kOverwrite)
         for m in self.mc :
             self.mc[m].Write(self.mc[m].GetName(), ROOT.TObject.kOverwrite)
         if self.dataH :
@@ -164,7 +167,10 @@ class Plot(object):
                 totalMC = self.mc[h].Clone('totalmc')
                 self._garbageList.append(totalMC)
                 totalMC.SetDirectory(0)
-
+	self.totMC = totalMC
+	self.totMC.name = "totalMC"
+	self.totMC.title = "MC"
+    
 	#print "about to create frame"
         frame = totalMC.Clone('frame') if totalMC is not None else self.dataH.Clone('frame')
         frame.Reset('ICE')
