@@ -26,8 +26,10 @@ muTrack_SF_path =  "../lepSF/Muon_Tracking_EfficienciesAndSF_BCDEFGH.root"
 
 ele23_SF_path =    "../lepSF/triggerSFs/HLT_EleMuLegHigPt.root"
 ele8_SF_path =     "../lepSF/triggerSFs/HLT_MuEleLegLowPt.root"
-mu23_SF_path =     "../lepSF/triggerSFs/IsoMu23_275001-275783.root"
-mu8_SF_path =      "../lepSF/triggerSFs/IsoMu8_275001-275783.root"
+mu23_SF_path =     "../lepSF/triggerSFs/Mu23_SF.root"
+mu8_SF_path =      "../lepSF/triggerSFs/Mu8_SF.root"
+#mu23_SF_path =     "../lepSF/triggerSFs/IsoMu23_275001-275783.root"
+#mu8_SF_path =      "../lepSF/triggerSFs/IsoMu8_275001-275783.root"
 
 eleID_file = TFile.Open(eleID_SF_path)
 eleID_SF = eleID_file.Get("EGamma_SF2D")	# TH2F
@@ -114,6 +116,9 @@ luminosity = 35861.0 # 1/pb
 lumiBF = 19715.0
 lumiGH = 16146.0
 
+luminosity = 36783.0 # 1/pb
+lumiBF = 20265.0
+lumiGH = 16518.0
 ###################################################################
 # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation80X  #
 # B tagging discriminator WPs                                     #

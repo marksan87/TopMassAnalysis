@@ -1,10 +1,10 @@
 #include"EventPick.h"
 
-const bool use_data_triggers = false;
+const bool use_data_triggers = true;
 const bool use_mc_triggers = false;
-const bool runH = false;    // Disable non-DZ triggers for Run H
+const bool runH = true;    // Disable non-DZ triggers for Run H
 
-const bool only_new_triggers = true;
+const bool only_new_triggers = false;
 
 double secondMinDr(int myInd, const EventTree* tree);
 
@@ -133,18 +133,30 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 
 	}
 
+
 	if (use_data_triggers) {
-	    passTriggers |= (tree->HLTEleMuX_ >> 52 & 1) | 
-			    (tree->HLTEleMuX_ >> 54 & 1) |
-			    (tree->HLTEleMuX_ >> 24 & 1);
+	    passTriggers |= (tree->HLTEleMuX_ >> 24 & 1) | 
+			    (tree->HLTEleMuX_ >> 26 & 1);
 
 	    if (!runH) {
-		passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) |
-				(tree->HLTEleMuX_ >> 53 & 1) | 
-				(tree->HLTEleMuX_ >> 23 & 1);
+		passTriggers |= (tree->HLTEleMuX_ >> 23 & 1) |
+				(tree->HLTEleMuX_ >> 25 & 1); 
 	    }
 	}
 
+
+/*	if (use_data_triggers) {
+	    passtriggers |= (tree->hltelemux_ >> 52 & 1) | 
+			    (tree->hltelemux_ >> 54 & 1) |
+			    (tree->hltelemux_ >> 24 & 1);
+
+	    if (!runh) {
+		passtriggers |= (tree->hltelemux_ >> 51 & 1) |
+				(tree->hltelemux_ >> 53 & 1) | 
+				(tree->hltelemux_ >> 23 & 1);
+	    }
+	}
+*/
 	if (use_mc_triggers) {
 	    passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) | 
 			    (tree->HLTEleMuX_ >> 52 & 1) |

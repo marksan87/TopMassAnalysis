@@ -1,0 +1,181 @@
+{
+"mc_TT_mt1715" : [
+                            831.76,
+                            0,
+                            "/TT_TuneCUETP8M2T4_13TeV-powheg-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+                            "t#bar{t}",
+                            633,
+                            19578812 
+],
+
+"mc_TTZToLLNuNu" : [
+                            0.253,
+                            0,
+                            "/TTZToLLNuNu_M-10_TuneCUETP8M1_13TeV-amcatnlo-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM", 
+                            "t#bar{t}+V",
+                            797,
+                            1992438 
+],
+
+"mc_TTWJetsToLNu" : [
+                            0.2043,
+                            0,
+                            "/TTWJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-madspin-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v3/MINIAODSIM",
+                            "t#bar{t}+V",
+                            797,
+                            2160168 
+],
+
+"mc_WWTo2L2Nu" : [
+                            12.178,
+                            0,
+                            "/WWTo2L2Nu_13TeV-powheg/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM",
+                            "Diboson",
+                            400,
+                            1999000
+],
+
+"mc_WZTo3LNu" : [
+                            2.165,
+                            0,
+                            "/WZTo3LNu_TuneCUETP8M1_13TeV-powheg-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+                            "Diboson",
+                            400,
+                            1993200 
+],
+
+"mc_ZZTo2L2Nu" : [
+                            0.414,
+                            0,
+                            "/ZZTo2L2Nu_13TeV_powheg_pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM",
+                            "Diboson",
+                            400,
+                            8842475
+],
+
+"mc_ST_s" : [
+                            10.32,
+                            0,
+                            "/ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+                            "ST",
+                            618,
+                            1000000
+],
+
+"mc_ST_tW_top" : [
+                            35.85,
+                            0,
+                            "/ST_tW_top_5f_NoFullyHadronicDecays_13TeV-powheg_TuneCUETP8M1/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM", 
+                            "ST",
+                            618,
+                            3256650 
+],
+
+"mc_ST_tW_antitop" : [
+                            35.85,
+                            0,
+                            "/ST_tW_antitop_5f_NoFullyHadronicDecays_13TeV-powheg_TuneCUETP8M1/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM", 
+                            "ST",
+                            618,
+                            3256407 
+],
+
+"mc_ST_t_top" : [
+                            136.02,
+                            0,
+                            "/ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+			    "ST",
+                            618,
+			    67240808
+],
+
+"mc_ST_t_antitop" : [
+                            80.95,
+                            0,
+                            "/ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+			    "ST",
+                            618,
+			    38811017 
+],
+
+"mc_WJetsToLNu" : [
+                            61526.7,
+                            0,
+                            "/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM", 
+			    "W",
+			    858,
+			    24120319 
+],
+
+"mc_DYJetsToLL" : [
+                            6025.2,
+                            0,
+                            "/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v2/MINIAODSIM", 
+                            "DY",
+			    868,
+			    49144274
+],
+
+"MuEG_Run2016B" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016B-23Sep2016-v3/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016C" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016C-23Sep2016-v1/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016D" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016D-23Sep2016-v1/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016E" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016E-23Sep2016-v1/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016F" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016F-23Sep2016-v1/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016G" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016G-23Sep2016-v1/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+],
+
+"MuEG_Run2016H" : [
+			    1,
+			    1,
+			    "/MuonEG/Run2016H-PromptReco-v2/MINIAOD and /MuonEG/Run2016H-PromptReco-v3/MINIAOD",
+			    "Data",
+			    1,
+			    -1
+]
+}

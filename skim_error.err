@@ -1,4 +1,0 @@
-/storage/local/data1/condor/execute/dir_31712/condor_exec.exe: line 6: cd: /uscms/home/msaunder/ggNtuples/CMSSW_7_4_14/src/: No such file or directory
-SCRAM fatal: Unable to locate the top of local release. Please run this command from a SCRAM-based area.
-/storage/local/data1/condor/execute/dir_31712/condor_exec.exe: line 9: cd: /uscms/home/msaunder/ggNtuples/CMSSW_7_4_14/src/ttgamma_13TeV/: No such file or directory
-/storage/local/data1/condor/execute/dir_31712/condor_exec.exe: line 17: NtuplePlotter/makeSkim: No such file or directory
