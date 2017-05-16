@@ -15,6 +15,11 @@ from subprocess import Popen, PIPE
 from roccor import RoccoR   # Rochester muon corrections
 rc = RoccoR("../Roc_muon_corrections/rcdata.2016.v3")
 
+use_tight_eleID = True 
+disable_trigger_SFs = False 
+disable_pileup_corr = False 
+use_fine_bins = True
+fine_binw = 5.8
 
 eleID_SF_path =    "../lepSF/Ele_MedID_egammaEffi.txt_EGM2D.root"
 eleReco_SF_path =  "../lepSF/Ele_Reco_egammaEffi.txt_EGM2D.root"
@@ -23,6 +28,9 @@ muID_SF_GH_path =  "../lepSF/Muon_TightID_EfficienciesAndSF_GH.root"
 muIso_SF_BF_path = "../lepSF/Muon_Isolation_EfficienciesAndSF_BCDEF.root"
 muIso_SF_GH_path = "../lepSF/Muon_Isolation_EfficienciesAndSF_GH.root"
 muTrack_SF_path =  "../lepSF/Muon_Tracking_EfficienciesAndSF_BCDEFGH.root"
+
+trigger_SF_path =     "../lepSF/triggerSFs/AN16_392_SFs.root"
+#trigger_SF_path =     "../lepSF/triggerSFs/TopTrigger_SFs.root"
 
 ele23_SF_path =    "../lepSF/triggerSFs/HLT_EleMuLegHigPt.root"
 ele8_SF_path =     "../lepSF/triggerSFs/HLT_MuEleLegLowPt.root"
@@ -53,7 +61,7 @@ muIso_SF_GH = muIso_GH_file.Get("TightISO_TightID_pt_eta/abseta_pt_ratio")
 muTrack_SF_file = TFile.Open(muTrack_SF_path)
 muTrack_SF = muTrack_SF_file.Get("ratio_eff_aeta_dr030e030_corr")
 
-
+"""
 ele23_SF_file = TFile.Open(ele23_SF_path)
 ele23_SF = ele23_SF_file.Get("SF")
 
@@ -65,6 +73,11 @@ mu23_SF = mu23_SF_file.Get("SF")
 
 mu8_SF_file = TFile.Open(mu8_SF_path)
 mu8_SF = mu8_SF_file.Get("SF")
+"""
+
+trigger_SF_file = TFile.Open(trigger_SF_path)
+trigger_SF = trigger_SF_file.Get("SF")
+
 
 # Needed for b tagging efficency
 #ROOT.gSystem.Load('libCondFormatsBTagObjects')
@@ -116,10 +129,10 @@ luminosity = 35861.0 # 1/pb
 lumiBF = 19715.0
 lumiGH = 16146.0
 
-luminosity = 36783.0 # 1/pb
-lumiBF = 20265.0
-lumiGH = 16518.0
-###################################################################
+#luminosity = 36783.0 # 1/pb
+#lumiBF = 20265.0
+#lumiGH = 16518.0
+##########i#########################################################
 # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation80X  #
 # B tagging discriminator WPs                                     #
 # Loose:  0.460   Mistag rate: 10%                                #
@@ -238,6 +251,8 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     flavor_bins = [0, 1, 2, 3]
     pileup_weight_bins = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
 
+    if use_fine_bins:
+	pt_bins = [10.0 + fine_binw * n for n in xrange(0,30)]
 
     histos = {}
    
@@ -351,9 +366,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 #    print "pileupWeighter.getAvgWeight() = ", pileupWeighter.getAvgWeight()
    
     tree.GetEntry(0)
-    if tree.isData:
-        weight = 1
-    else:
+    if not tree.isData:
         xsec_weight = 1.0 * xsec / n_mc_events
     
     for i in xrange(0, totalIterations):   
@@ -383,7 +396,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	weight = 1.0
 
 	if not tree.isData:
-	    pileup_weight = pileupWeighter.getWeight(tree.nPUInfo, tree.puBX, tree.puTrue)
+	    pileup_weight = 1.0 if disable_pileup_corr else pileupWeighter.getWeight(tree.nPUInfo, tree.puBX, tree.puTrue)
 	    if pileup_weight != 1.0:
 		puWeightSum += pileup_weight
 		puEvents += 1
@@ -411,7 +424,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    # Impose selection cuts	
 	    if (tree.elePt[ele_n] > ele_pt_cut
 		and ROOT.TMath.Abs(tree.eleEta[ele_n]) < ele_eta_cut 
-		and bool(tree.eleIDbit[ele_n] >> 2 & 1)  # Medium ele cut
+		and bool(tree.eleIDbit[ele_n] >> (3 if use_tight_eleID else 2) & 1)  # Medium ele cut
 	        and ele_relIso < ele_relIso_cut[region]
 		and tree.eleD0[ele_n] < ele_D0_cut[region]
 		and tree.eleDz[ele_n] < ele_Dz_cut[region]):
@@ -666,19 +679,28 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 			    muTrkSF = muTrack_SF.Eval(muAEta)
 			    if muTrkSF == 0.0: print "muTrkSF = 0, muAEta = ", muAEta
 			    
+			    if not disable_trigger_SFs:	
+				"""	
+				mu8ele23_SF = 0.0
+				mu23ele8_SF = 0.0
+				if (tree.HLTEleMuX >> 23 & 1) | (tree.HLTEleMuX >> 24 & 1):
+				    mu8ele23_SF = mu8_SF.GetBinContent(mu8_SF.FindBin(muEta, min(199.9, muPt))) * \
+					      ele23_SF.GetBinContent(ele23_SF.FindBin(eleSCEta, min(99.9, elePt)))
 
-			    mu8ele23_SF = 0.0
-			    mu23ele8_SF = 0.0
-			    if (tree.HLTEleMuX >> 23 & 1) | (tree.HLTEleMuX >> 24 & 1):
-				mu8ele23_SF = mu8_SF.GetBinContent(mu8_SF.FindBin(muEta, min(199.9, muPt))) * \
-					  ele23_SF.GetBinContent(ele23_SF.FindBin(eleSCEta, min(99.9, elePt)))
+				if (tree.HLTEleMuX >> 25 & 1) | (tree.HLTEleMuX >> 26 & 1):
+				    mu23ele8_SF = mu23_SF.GetBinContent(mu23_SF.FindBin(muEta, min(199.9, muPt))) * \
+					      ele8_SF.GetBinContent(ele8_SF.FindBin(eleSCEta, min(99.9, elePt)))
+			        
+				trigSF = (max(mu8ele23_SF, mu23ele8_SF))**0.5
+				if i < 10: print trigSF	
+				"""
 
-			    if (tree.HLTEleMuX >> 25 & 1) | (tree.HLTEleMuX >> 26 & 1):
-				mu23ele8_SF = mu23_SF.GetBinContent(mu23_SF.FindBin(muEta, min(199.9, muPt))) * \
-					  ele8_SF.GetBinContent(ele8_SF.FindBin(eleSCEta, min(99.9, elePt)))
-			   
-			    trigSF = max(mu8ele23_SF, mu23ele8_SF)
-			    #print "trigSF = ", trigSF
+				# Clamp pt to 99.9 GeV
+				# xaxis: leading lepton pt
+				# yaxis: trailing lepton pt
+				trigSF = trigger_SF.GetBinContent(trigger_SF.FindBin(min(99.9, max(elePt, muPt)), min(99.9, min(elePt, muPt)))) 
+			    else:
+				trigSF = 1.0
 			    weight *= (lumiBF * muBF_SF + lumiGH * muGH_SF) * muTrkSF * trigSF
 
 			    

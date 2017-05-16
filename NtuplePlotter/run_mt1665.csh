@@ -1,6 +1,7 @@
 #!/bin/bash
 set -x
-python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_Sep16ReReco.root -j mt1665.json -o plots_mt1665 -n 17
+#python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_Sep16ReReco.root -j mt1665.json -o plots_mt1665 -n 17
+python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_combinedLumi_down.root -j mt1665.json -o plots_mt1665 -n 17
 source /cvmfs/cms.cern.ch/cmsset_default.csh
 
 pushd plots_mt1665
@@ -10,7 +11,7 @@ hadd -f mc_ST_tW_antitop.root mc_ST_tW_antitop_*
 hadd -f mc_ST_tW_top.root mc_ST_tW_top_*
 hadd -f mc_ST_t_antitop.root mc_ST_t_antitop_*
 hadd -f mc_ST_t_top.root mc_ST_t_top_*
-hadd -f mc_TT_mt1665.root mc_TT_mt1665*
+hadd -f mc_TT_mt1665.root mc_TT_mt1665_*
 hadd -f mc_TTWJetsToLNu.root mc_TTWJetsToLNu_*
 hadd -f mc_TTZToLLNuNu.root mc_TTZToLLNuNu_*
 hadd -f mc_WJetsToLNu.root mc_WJetsToLNu_*
@@ -25,4 +26,4 @@ hadd -f MuEG_Run2016F.root MuEG_Run2016F_*
 hadd -f MuEG_Run2016G.root MuEG_Run2016G_*
 hadd -f MuEG_Run2016H.root MuEG_Run2016H_*
 popd
-python plotter.py -i plots_mt1665 -j mt1665.json -l 36783.0
+python plotter.py -i plots_mt1665 -j mt1665.json -l 36000.0

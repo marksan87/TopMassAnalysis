@@ -47,7 +47,8 @@ class Plot(object):
         #self.plotformats = ['pdf','png']
         self.plotformats = ['png']
 	self.savelog = False
-        self.ratiorange = (0.46,1.54)
+        #self.ratiorange = (0.46,1.54)
+        self.ratiorange = (0.7,1.3)
 
 
     def add(self, h, title, color, isData):
@@ -408,7 +409,8 @@ def main():
     #ROOT.gStyle.SetOptStat(1111)
     ROOT.gStyle.SetOptTitle(1)
     ROOT.gStyle.SetOptStat(0)
-    
+    #ROOT.gStyle.SetOptStat("eimr")
+
     ROOT.gROOT.SetBatch(True)
     outDir=opt.inDir+'/plots'
     os.system('mkdir -p %s' % outDir)

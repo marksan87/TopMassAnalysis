@@ -3,6 +3,36 @@ import argparse
 import sys
 from array import array
 
+def CHI2(d, m):
+
+    n=0
+    ps=0
+    mc_bins = m.GetNbinsX() #Mc bins
+    data_bins = d.GetNbinsX() #Data bins
+    chi2=0
+
+    if mc_bins is not data_bins:
+	print "Different number of bins in data and mc!"
+	return
+
+    
+    while (n < mc_bins):
+            
+        O=d.GetBinContent(n)
+        E=m.GetBinContent(n)
+	if E == 0:
+	    print "value in bin", n, "is 0!"
+	    n+=1
+	    continue
+	
+	#print "Bin ",n,"  mc:", E, "  data:",O
+	print "Bin ",n," discrepancy: ", O-E 
+	ps = ((O-E)**2.0)/((E)**2.0)
+        chi2 += ps
+        n += 1
+        
+    return chi2
+
 def main():
     usage = 'usage %prog [options]'
 
@@ -39,20 +69,55 @@ def main():
     mc1755 = d1755.Get("totalmc")
     mc1785 = d1785.Get("totalmc")
     data = dmain.Get(args.plot)
+   
+    #mcmain.Sumw2()
+    #mc1665.Sumw2()
+    #mc1695.Sumw2()
+    #mc1715.Sumw2()
+    #mc1735.Sumw2()
+    #mc1755.Sumw2()
+    #mc1785.Sumw2()
+
+    """
+    chi1665 = CHI2(mcmain, mc1665)
+    chi1695 = CHI2(mcmain, mc1695)
+    chi1715 = CHI2(mcmain, mc1715)
+    chi1735 = CHI2(mcmain, mc1735)
+    chi1755 = CHI2(mcmain, mc1755)
+    chi1785 = CHI2(mcmain, mc1785)
+    """
+    """
+    chi1665 = CHI2(data, mc1665)
+    chi1695 = CHI2(data, mc1695)
+    chi1715 = CHI2(data, mc1715)
+    chi1735 = CHI2(data, mc1735)
+    chi1755 = CHI2(data, mc1755)
+    chi1785 = CHI2(data, mc1785)
+    """
+    """ 
+    chi1665 = data.Chi2Test(mc1665, "CHI2")
+    chi1695 = data.Chi2Test(mc1695, "CHI2")
+    chi1715 = data.Chi2Test(mc1715, "CHI2")
+    chi1735 = data.Chi2Test(mc1735, "CHI2")
+    chi1755 = data.Chi2Test(mc1755, "CHI2")
+    chi1785 = data.Chi2Test(mc1785, "CHI2")
+    """
     
-    chi1665 = data.Chi2Test(mc1665, "UW CHI2")
-    chi1695 = data.Chi2Test(mc1695, "UW CHI2")
-    chi1715 = data.Chi2Test(mc1715, "UW CHI2")
-    chi1735 = data.Chi2Test(mc1735, "UW CHI2")
-    chi1755 = data.Chi2Test(mc1755, "UW CHI2")
-    chi1785 = data.Chi2Test(mc1785, "UW CHI2")
-    
-#    chi1665 = mcmain.Chi2Test(mc1665, "WW CHI2")
-#    chi1695 = mcmain.Chi2Test(mc1695, "WW CHI2")
-#    chi1715 = mcmain.Chi2Test(mc1715, "WW CHI2")
-#    chi1735 = mcmain.Chi2Test(mc1735, "WW CHI2")
-#    chi1755 = mcmain.Chi2Test(mc1755, "WW CHI2")
-#    chi1785 = mcmain.Chi2Test(mc1785, "WW CHI2")
+    chi1665 = data.Chi2Test(mc1665, "UW  CHI2/NDF")
+    chi1695 = data.Chi2Test(mc1695, "UW  CHI2/NDF")
+    chi1715 = data.Chi2Test(mc1715, "UW  CHI2/NDF")
+    chi1735 = data.Chi2Test(mc1735, "UW  CHI2/NDF")
+    chi1755 = data.Chi2Test(mc1755, "UW  CHI2/NDF")
+    chi1785 = data.Chi2Test(mc1785, "UW  CHI2/NDF")
+     
+     
+     
+#    chi1665 = mcmain.Chi2Test(mc1665, "WW P CHI2")
+#    chi1695 = mcmain.Chi2Test(mc1695, "WW P CHI2")
+#    chi1715 = mcmain.Chi2Test(mc1715, "WW P CHI2")
+#    chi1735 = mcmain.Chi2Test(mc1735, "WW P CHI2")
+#    chi1755 = mcmain.Chi2Test(mc1755, "WW P CHI2")
+#    chi1785 = mcmain.Chi2Test(mc1785, "WW P CHI2")
     
 #    chi1665 = mcmain.Chi2Test(mc1665, "WW CHI2/NDF")
 #    chi1695 = mcmain.Chi2Test(mc1695, "WW CHI2/NDF")
