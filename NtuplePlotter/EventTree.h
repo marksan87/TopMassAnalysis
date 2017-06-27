@@ -181,6 +181,9 @@ public:
 	vector<float>*  eleBrem_;
 	vector<float>*  eledEtaAtVtx_;
 	vector<float>*  eledPhiAtVtx_;
+	
+	vector<float>*  eledEtaseedAtVtx_;
+
 	//vector<float>*  eleSigmaIEtaIEta_;
 	vector<float>*  eleSigmaIEtaIPhi_;
 	vector<float>*  eleSigmaIPhiIPhi_;
@@ -1025,6 +1028,7 @@ public:
 	vector<vector<float> >* jetBetaExt_;
 	vector<vector<float> >* jetBetaStarCMGExt_;
 	vector<vector<float> >* jetBetaStarClassicExt_;
+	vector<int>*   jetID_;
 	vector<bool>*  jetPFLooseId_;
 	// b-jet regression variables
 	vector<float>* jetMt_;

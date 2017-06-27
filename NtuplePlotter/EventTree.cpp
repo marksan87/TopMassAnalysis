@@ -157,10 +157,10 @@ EventTree::EventTree(int nFiles, char** fileNames){
 	eleConvVeto_ = new vector<int>;
 	chain->SetBranchStatus("eleConvVeto",1);
 	chain->SetBranchAddress("eleConvVeto", &eleConvVeto_);
-
-//	eleEtaseedAtVtx_ = new vector<int>;
-//	chain->SetBranchStatus("eleEtaseedAtVtx",1);
-//	chain->SetBranchAddress("eleEtaseedAtVtx", &eleEtaseedAtVtx_);
+	
+	eledEtaseedAtVtx_ = new vector<int>;
+	chain->SetBranchStatus("eledEtaseedAtVtx",1);
+	chain->SetBranchAddress("eledEtaseedAtVtx", &eledEtaseedAtVtx_);
 
 	eleDz_ = new vector<float>;
 	chain->SetBranchStatus("eleDz",1);
@@ -314,7 +314,11 @@ EventTree::EventTree(int nFiles, char** fileNames){
 	jetEn_ = new vector<float>;
 	chain->SetBranchStatus("jetEn",1);
 	chain->SetBranchAddress("jetEn", &jetEn_);
-	
+
+	jetID_ = new vector<int>;
+	chain->SetBranchStatus("jetID",1);
+	chain->SetBranchAddress("jetID", &jetID_);
+
 	jetPFLooseID_ = new vector<bool>;
 	chain->SetBranchStatus("jetPFLooseId",1);
         chain->SetBranchAddress("jetPFLooseId", &jetPFLooseID_);

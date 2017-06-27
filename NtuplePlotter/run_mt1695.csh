@@ -1,7 +1,6 @@
 #!/bin/bash
 set -x
-#python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_Sep16ReReco.root -j mt1695.json -o plots_mt1695 -n 17
-python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_combinedLumi_down.root -j mt1695.json -o plots_mt1695 -n 17
+python top_mass_analysis.py --inDir /uscms_data/d1/msaunder/skims2017 -p ../Pileup/pileup_processed_lumimasked.root -j mt1695.json -o plots_mt1695 -n 17
 source /cvmfs/cms.cern.ch/cmsset_default.csh
 
 pushd plots_mt1695
@@ -26,4 +25,4 @@ hadd -f MuEG_Run2016F.root MuEG_Run2016F_*
 hadd -f MuEG_Run2016G.root MuEG_Run2016G_*
 hadd -f MuEG_Run2016H.root MuEG_Run2016H_*
 popd
-python plotter.py -i plots_mt1695 -j mt1695.json -l 36000.0
+python plotter.py -i plots_mt1695 -j mt1695.json -l 35862.0

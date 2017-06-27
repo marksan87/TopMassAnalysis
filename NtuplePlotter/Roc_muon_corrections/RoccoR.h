@@ -1,17 +1,13 @@
 #include "TRandom3.h"
 #include "TMath.h"
-
+#include <iostream>
+using namespace std;
 
 struct CrystalBall{
-//    static const double pi;
-//    static const double SPiO2;
-//    static const double S2;
-    static constexpr const double pi = 3.141592653589793; //(double) TMath::Pi();
-    static constexpr const double SPiO2 = sqrt(3.141592653589793/2.0);//sqrt(TMath::Pi()/2.0); 
-    static constexpr const double S2 = sqrt(2.0);
-//const double CrystalBall::pi    = TMath::Pi();
-/////const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
-////const double CrystalBall::S2    = sqrt(2.0);
+    static const double pi;
+    static const double SPiO2;
+    static const double S2;
+
     double m;
     double s;
     double a;
@@ -95,17 +91,15 @@ struct CrystalBall{
 	return m - S2*s*TMath::ErfInverse((D - u/Ns ) / SPiO2);
     }
 };
-//const double CrystalBall::pi    = TMath::Pi();
-///const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
-//const double CrystalBall::S2    = sqrt(2.0);
+const double CrystalBall::pi    = TMath::Pi();
+const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
+const double CrystalBall::S2    = sqrt(2.0);
 
 
 class RocRes{
-    public:
-	static constexpr const int NMAXETA=12;
-	static constexpr const int NMAXTRK=12;
-	
     private:
+	static const int NMAXETA=12;
+	static const int NMAXTRK=12;
 
 	int NETA;
 	int NTRK;
@@ -157,11 +151,9 @@ class RocRes{
 
 
 class RocOne{
-    public: 
-	static constexpr const int NMAXETA=22;
-	static constexpr const int NMAXPHI=16;
-
     private:
+	static const int NMAXETA=22;
+	static const int NMAXPHI=16;
 	static const double MPHI;
 
 	int NETA;

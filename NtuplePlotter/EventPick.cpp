@@ -24,11 +24,9 @@ EventPick::EventPick(std::string titleIn, bool liteMode){
 	histVector.push_back(cutFlowWeight);
 
 	// assign cut values
-	veto_jet_dR = 0.1;
+	//veto_jet_dR = 0.1;
 	veto_lep_jet_dR = 0.4;
 
-	MET_cut = 40.0;
-	no_trigger = false;
 	jet_pt_cut = 30;
 	Njet_ge = 1;
 	NBjet_ge = 1;
@@ -50,33 +48,34 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 	//loose electrons
 	for(std::vector<int>::const_iterator eleInd = selector->Electrons.begin(); eleInd != selector->Electrons.end(); eleInd++){
 		bool goodEle = true;
-		for(int jetInd = 0; jetInd < tree->nJet_; jetInd++){
-			double drje = dR_jet_ele(jetInd, *eleInd);
-			if(tree->jetPt_->at(jetInd) > jet_pt_cut && veto_jet_dR <= drje && drje < veto_lep_jet_dR) goodEle = false;
-		}
+//		for(int jetInd = 0; jetInd < tree->nJet_; jetInd++){
+//			double drje = dR_jet_ele(jetInd, *eleInd);
+//			if(tree->jetPt_->at(jetInd) > jet_pt_cut && veto_jet_dR <= drje && drje < veto_lep_jet_dR) goodEle = false;
+//		}
 		if(goodEle) Electrons.push_back(*eleInd);
 	}
 	
 	for(std::vector<int>::const_iterator muInd = selector->Muons.begin(); muInd != selector->Muons.end(); muInd++) {
 		bool goodMu = true;
-		for(int jetInd = 0; jetInd < tree->nJet_; jetInd++){
-			double drjmu = dR_jet_mu(jetInd, *muInd);
-			if(tree->jetPt_->at(jetInd) > jet_pt_cut && veto_jet_dR <= drjmu && drjmu < veto_lep_jet_dR) goodMu = false;
-		}
+//		for(int jetInd = 0; jetInd < tree->nJet_; jetInd++){
+//			double drjmu = dR_jet_mu(jetInd, *muInd);
+//			if(tree->jetPt_->at(jetInd) > jet_pt_cut && veto_jet_dR <= drjmu && drjmu < veto_lep_jet_dR) goodMu = false;
+//		}
 		if(goodMu) Muons.push_back(*muInd);
 	}
 
 
 	// pre-selection: top ref selection
 	// copy jet and electron collections, consiering overlap of jets with electrons, loose electrons:
-	// keep jets not close to electrons (veto_jet_dR)
+	// keep jets not close to leptons (veto_lep_jet_dR)
 	for(std::vector<int>::const_iterator jetInd = selector->Jets.begin(); jetInd != selector->Jets.end(); jetInd++){
 		bool goodJet = true;
 		
-		for(std::vector<int>::const_iterator eleInd = selector->Electrons.begin(); eleInd != selector->Electrons.end(); eleInd++)
-			if(dR_jet_ele(*jetInd, *eleInd) < veto_jet_dR) goodJet = false;
-		for(std::vector<int>::const_iterator muInd = selector->Muons.begin(); muInd != selector->Muons.end(); muInd++)
-                        if(dR_jet_mu(*jetInd, *muInd) < veto_jet_dR) goodJet = false;
+		//  Save jet cleaning for analysis-level cuts
+//		for(std::vector<int>::const_iterator eleInd = selector->Electrons.begin(); eleInd != selector->Electrons.end(); eleInd++)
+//			if(dR_jet_ele(*jetInd, *eleInd) < veto_lep_jet_dR) goodJet = false;
+//		for(std::vector<int>::const_iterator muInd = selector->Muons.begin(); muInd != selector->Muons.end(); muInd++)
+//		                      if(dR_jet_mu(*jetInd, *muInd) < veto_lep_jet_dR) goodJet = false;
 		if(goodJet) Jets.push_back(*jetInd);
 		
 		// take care of bJet collection

@@ -6,8 +6,7 @@
 #include "TSystem.h"
 #include "TMath.h"
 #include "RoccoR.h"
-#include <iostream>
-using namespace std;
+
 
 int RocRes::getBin(double x, const int NN, const double *b) const{
     for(int i=0; i<NN; ++i) if(x<b[i+1]) return i;
@@ -53,7 +52,7 @@ int RocRes::getNBinMC(double v, int H) const{
 }
 
 void RocRes::dumpParams(){
-//    using namespace std;
+    using namespace std;
 
     cout << NMIN << endl;
     cout << NTRK << endl;

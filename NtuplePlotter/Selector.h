@@ -9,6 +9,9 @@
 #include<TMath.h>
 #include<TLorentzVector.h>
 #include"EventTree.h"
+#include"Roc_muon_corrections/RoccoR.h"
+#include<string>
+#include<TRandom3.h>
 
 double dR(double eta1, double phi1, double eta2, double phi2);
 
@@ -18,7 +21,11 @@ public:
 	~Selector();
 	
 	void process_objects(const EventTree* inp_tree);
-	
+
+	RoccoR* rc;  // Rochester muon pt corrector
+	TRandom3* rand;
+    
+
 	// selected object indices
 	std::vector<int> Electrons;
 	std::vector<int> Muons;
