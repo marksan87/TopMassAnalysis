@@ -6,6 +6,7 @@ import json
 import ROOT
 import math
 
+from ROOT import kBlue
 # Dimensions of canvas
 _canvas_width = 1000
 _canvas_height = 1000
@@ -198,8 +199,19 @@ class Plot(object):
         frame.Draw()
         frame.GetYaxis().SetTitleOffset(1.3)
 
-        if totalMC is not None   : stack.Draw('hist same')
+
+	# Draw histograms
+        if totalMC is not None: 
+	    stack.Draw('hist same')
+	    # Draw error regions
+	    err = totalMC.Clone()
+	    err.SetFillColor(kBlue)
+	    err.SetFillStyle(3018)
+	    err.Draw("e2same")
+
         if self.data is not None : self.data.Draw('p')
+
+
 
         leg.Draw()
         txt=ROOT.TLatex()
@@ -251,6 +263,10 @@ class Plot(object):
             gr.SetLineWidth(self.data.GetLineWidth())
 	    #gr.SetOptStat(0)
             gr.Draw('p')
+	    ratioErr = gr.Clone()
+	    ratioErr.SetFillColor(kBlue)
+	    ratioErr.SetFillStyle(3018)
+	    ratioErr.Draw("e2same")
         except:
             pass
 

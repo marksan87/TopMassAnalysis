@@ -4,16 +4,30 @@ gROOT.ProcessLine('.L ../plugins/th1fmorph.cc+')
 from ROOT import th1fmorph, gStyle
 from array import array
 from math import sqrt
+from argparse import ArgumentParser
 
 gStyle.SetOptStat("imr")
 gROOT.SetBatch(True)  # True: Don't display canvas
 
 colors = [kRed, kOrange+1, kGreen+1, kBlack, kCyan, kBlue, kViolet-1]
 
-c = TCanvas("c","c", 1400, 1400)
 
-#loc = "no_pileup/"
-loc = "fine_binned/"
+parser = ArgumentParser()
+parser.add_argument("path", help="path to directory of histogram files")
+args = parser.parse_args()
+
+
+
+c = TCanvas("c","c", 1600, 1400)
+
+
+#loc = "btagsf/"
+loc = args.path
+if loc[-1] != '/':
+    loc += '/'
+
+CHI2_include_nomMass = False 
+
 #loc = "pileup_down/"
 # tW histos
 f1 = TFile.Open(loc + "tW/mc_ST_tW_antitop_mt1695.root")
@@ -133,13 +147,13 @@ tt_templates.Close()
 #    print h.GetBinContent(8)
 
 l = TLegend(0.75, 0.75, 0.95, 0.95)
-l.AddEntry(tt_h[0], "mt = 166.5 GeV")
-l.AddEntry(tt_h[1], "mt = 169.5 GeV")
-l.AddEntry(tt_h[2], "mt = 171.5 GeV")
-l.AddEntry(tt_h[3], "mt = 172.5 GeV")
-l.AddEntry(tt_h[4], "mt = 173.5 GeV")
-l.AddEntry(tt_h[5], "mt = 175.5 GeV")
-l.AddEntry(tt_h[6], "mt = 178.5 GeV")
+l.AddEntry(tt_h[0], "m_{t} = 166.5 GeV")
+l.AddEntry(tt_h[1], "m_{t} = 169.5 GeV")
+l.AddEntry(tt_h[2], "m_{t} = 171.5 GeV")
+l.AddEntry(tt_h[3], "m_{t} = 172.5 GeV")
+l.AddEntry(tt_h[4], "m_{t} = 173.5 GeV")
+l.AddEntry(tt_h[5], "m_{t} = 175.5 GeV")
+l.AddEntry(tt_h[6], "m_{t} = 178.5 GeV")
 
 tt_h[0].Draw("H HIST 9")
 for i, h in enumerate(tt_h):
@@ -160,7 +174,7 @@ p2.SetGridy(True)
 p2.cd()
 gStyle.SetOptStat(0)
 ratioframe=(tt_h[3]).Clone('ratioframe')
-ratioframe.GetYaxis().SetTitle('Data/MC')
+ratioframe.GetYaxis().SetTitle('ratio to nominal')
 ratioframe.GetYaxis().SetRangeUser(0.7,1.3)
 ratioframe.GetYaxis().SetNdivisions(5)
 ratioframe.GetYaxis().SetLabelSize(0.18)        
@@ -293,6 +307,12 @@ rbTT = []
 for tt in tt_h:
     rbTT.append(tt.Rebin(nbins, "tt rebinned", array('d',bins)))
 
+norm_rebin_TT = []
+for tt in tt_h:
+    tt.Scale(1.0 / tt.Integral())
+    norm_rebin_TT.append(tt.Rebin(nbins, "tt normalized rebinned", array('d',bins)))
+
+
 
 rbSig = []
 for h in sig:
@@ -348,7 +368,7 @@ txt.SetNDC(True)
 txt.SetTextFont(43)
 txt.SetTextSize(20)
 txt.SetTextAlign(12)
-txt.DrawLatex(0.15,0.97,'#bf{CMS} #it{Preliminary} %3.1f fb^{-1} (13 TeV)' % (35.8) )
+txt.DrawLatex(0.15,0.97,'#bf{CMS} #it{Preliminary} %3.1f fb^{-1} (13 TeV)' % (35.9) )
 
 p2 = TPad('p2','p2',0.0,0.02,1.0,0.17)
 p2.Draw()
@@ -361,7 +381,8 @@ p2.SetGridy(True)
 p2.cd()
 gStyle.SetOptStat(0)
 ratioframe=rbData.Clone('ratioframe')
-ratioframe.GetYaxis().SetTitle('Data/MC')
+ratioframe.SetTitle("")
+ratioframe.GetYaxis().SetTitle('ratio wrt nom')
 ratioframe.GetYaxis().SetRangeUser(0.7,1.3)
 ratioframe.GetYaxis().SetNdivisions(5)
 ratioframe.GetYaxis().SetLabelSize(0.18)        
@@ -393,7 +414,20 @@ except:
     pass
 c.SaveAs("signal_pt_ll.jpg")
 
+#for h in rbTT:
+#    h.Scale(h.Integral())
+
+############
+# Not used
+
 """
+chi1665 = rbTT[3].Chi2Test(rbTT[0], "WW  CHI2")
+chi1695 = rbTT[3].Chi2Test(rbTT[1], "WW  CHI2")
+chi1715 = rbTT[3].Chi2Test(rbTT[2], "WW  CHI2")
+chi1735 = rbTT[3].Chi2Test(rbTT[4], "WW  CHI2")
+chi1755 = rbTT[3].Chi2Test(rbTT[5], "WW  CHI2")
+chi1785 = rbTT[3].Chi2Test(rbTT[6], "WW  CHI2")
+
 chi1665 = (tt_h[3]).Chi2Test(mc_tot[0], "WW  CHI2")
 chi1695 = (tt_h[3]).Chi2Test(mc_tot[1], "WW  CHI2")
 chi1715 = (tt_h[3]).Chi2Test(mc_tot[2], "WW  CHI2")
@@ -408,14 +442,12 @@ chi1735 = mcN.Chi2Test(mc_tot[3], "WW  CHI2")
 chi1755 = mcN.Chi2Test(mc_tot[4], "WW  CHI2")
 chi1785 = mcN.Chi2Test(mc_tot[5], "WW  CHI2")
 
-
 chi1665 = data.Chi2Test(mc_tot[0], "WW  CHI2")
 chi1695 = data.Chi2Test(mc_tot[1], "WW  CHI2")
 chi1715 = data.Chi2Test(mc_tot[2], "WW  CHI2")
 chi1735 = data.Chi2Test(mc_tot[3], "WW  CHI2")
 chi1755 = data.Chi2Test(mc_tot[4], "WW  CHI2")
 chi1785 = data.Chi2Test(mc_tot[5], "WW  CHI2")
-"""
 
 chi1665 = rbData.Chi2Test(rbSig[0], "WW  CHI2")
 chi1695 = rbData.Chi2Test(rbSig[1], "WW  CHI2")
@@ -423,15 +455,20 @@ chi1715 = rbData.Chi2Test(rbSig[2], "WW  CHI2")
 chi1735 = rbData.Chi2Test(rbSig[4], "WW  CHI2")
 chi1755 = rbData.Chi2Test(rbSig[5], "WW  CHI2")
 chi1785 = rbData.Chi2Test(rbSig[6], "WW  CHI2")
+"""
 
 mass = [166.5, 169.5, 171.5, 173.5, 175.5, 178.5]
-chi2s = [chi1665, chi1695, chi1715, chi1735, chi1755, chi1785]
+#chi2s = [chi1665, chi1695, chi1715, chi1735, chi1755, chi1785]
 
-def graphChi2(nom, mc, masses, name):
+def graphChi2(nom, mc, masses, nom_mt, name):
     gr = TGraph()
     gStyle.SetMarkerColor(kBlue)
     gStyle.SetLineColor(kBlue)
     for i, m in enumerate(masses):
+	if not CHI2_include_nomMass:
+	    # Don't calculate chi2 with nominal mass included (should evaluate to 0 in that case)
+	    if abs(nom_mt - m) < 0.01:
+		continue
 	mass = str(m)
 	np=gr.GetN()
 	chi2 = float(nom.Chi2Test(mc[i], "WW  CHI2"))
@@ -492,12 +529,18 @@ def graphChi2(nom, mc, masses, name):
     txt.SetTextFont(43)
     txt.SetTextSize(20)
     txt.SetTextAlign(12)
-    txt.DrawLatex(0.18,0.92,'#bf{CMS} #it{Preliminary} %3.1f fb^{-1} (13 TeV)' % (35.8) )
+    txt.DrawLatex(0.18,0.92,'#bf{CMS} #it{Preliminary} %3.1f fb^{-1} (13 TeV)' % (35.9) )
     c1.SaveAs(name + ".jpg")
 
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
 #signal = [rbTT[0], rbTT[1], rbTT[2], rbTT[3], rbTT[4], rbTT[5], rbTT[6]]
+
+######
+#signal = [norm_rebin_TT[0], norm_rebin_TT[1], norm_rebin_TT[2], norm_rebin_TT[3], norm_rebin_TT[4], norm_rebin_TT[5], norm_rebin_TT[6]]
+#signal = [rbTT[0], rbTT[1], rbTT[2], rbTT[3], rbTT[4], rbTT[5], rbTT[6]]
 signal = [tt_h[0], tt_h[1], tt_h[2], tt_h[3], tt_h[4], tt_h[5], tt_h[6]]
+########
+
 #graphChi2(rbData, signal, mass, "chi2_new")
 
 for y in tt_h:
@@ -505,23 +548,23 @@ for y in tt_h:
 
 mass = [166.5, 169.5, 171.5, 172.5, 173.5, 175.5, 178.5]
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
-graphChi2(tt_h[1], signal, mass, "chi2_169")
+graphChi2(signal[1], signal, mass, 169.5, "chi2_169")
 
 mass = [166.5, 169.5, 171.5, 172.5, 173.5, 175.5, 178.5]
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
-graphChi2(tt_h[2], signal, mass, "chi2_171")
+graphChi2(signal[2], signal, mass, 171.5, "chi2_171")
 
 mass = [166.5, 169.5, 171.5, 172.5, 173.5, 175.5, 178.5]
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
-graphChi2(tt_h[3], signal, mass, "chi2_172")
+graphChi2(signal[3], signal, mass, 172.5, "chi2_172")
 
 #mass = [166.5, 169.5, 171.5, 172.5, 175.5, 178.5]
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
-graphChi2(tt_h[4], signal, mass, "chi2_173")
+graphChi2(signal[4], signal, mass, 173.5, "chi2_173")
 
 #mass = [166.5, 169.5, 171.5, 172.5, 173.5, 178.5]
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
-graphChi2(tt_h[5], signal, mass, "chi2_175")
+graphChi2(signal[5], signal, mass, 175.5, "chi2_175")
 
 #chi1665 = rbData.Chi2Test(rbTT[0], "WW  CHI2")
 #chi1695 = rbData.Chi2Test(rbTT[1], "WW  CHI2")
@@ -547,13 +590,14 @@ chi1785 = mc_tot[0].Chi2Test(mc_tot[5], "WW  CHI2")
 #chi1755 = data.chi2test(tt_h[5], "ww  chi2")
 #chi1785 = data.chi2test(tt_h[6], "ww  chi2")
 
+"""
 print "mt = 166.5: chi2 = ", chi1665
 print "mt = 169.5: chi2 = ", chi1695
 print "mt = 171.5: chi2 = ", chi1715
 print "mt = 173.5: chi2 = ", chi1735
 print "mt = 175.5: chi2 = ", chi1755
 print "mt = 178.5: chi2 = ", chi1785
-
+"""
 
 
 h169.Scale(1.0 / h169.Integral())
