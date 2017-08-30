@@ -23,7 +23,7 @@ use_fine_bins = True
 fine_binw = 5.8
 
 debug = False 
-debug_iter = 100
+debug_iter = 1000
 
 enable_roc_corrections = False # Rochester muon corrections done at skim level
 if enable_roc_corrections:
@@ -281,65 +281,131 @@ def doJER(tree, sys_type):
 def getBtagSF(tree, selectedBjets, sysType, reader):
     product = 1.0
     scaleFactors = []
-    num_gen_bjets = 0
-
-    # TODO: Check this
-    for bjet in selectedBjets:
-        if abs(tree.jetPartonID[bjet[0]]) == 5:  # Truth flavor B
-            num_gen_bjets += 1
+    #num_gen_bjets = 0
+    bjet_cut = 2 if require_two_btags else 1
     
-    #print "len(selectedBjets) =", len(selectedBjets), "\tnum_gen_bjets =", num_gen_bjets
+
+    if (bjet_cut == 0):
+        return 1.0
+
+    
+    btagWeight = 0.0
+    for bjet in selectedBjets:
+	jetPt = bjet[1]
+	jetEta = tree.jetEta[bjet[0]]
+	jetFlavor = abs(tree.jetPartonID[bjet[0]])  # Jet truth flavor
+   
+    
+	if jetFlavor == 5: # b jet
+	    scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt))
+	elif jetFlavor == 4: # c jet
+	    scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_C, jetEta, jetPt))
+	else:   # udsg jet
+	    scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_UDSG, jetEta, jetPt))
+
+    if bjet_cut > len(scaleFactors):
+	#print "len(selectedBjets) ==", len(selectedBjets)
+	
+	#if len(scaleFactors) > 0:
+	#    print "bjet_cut > len(scaleFactors)! Returning 0.0 weight"
+	return 0.0
+
+    if len(scaleFactors) == 1:
+	return scaleFactors[0]
+
+    elif len(scaleFactors) >= 2:
+	weight0 = 1.0
+	weight1 = 0.0
+	
+	for sf in scaleFactors:
+	    weight0 *= 1.0 - sf
 
 
-    if (num_gen_bjets == 0):
+	for j_ind, j in enumerate(scaleFactors):
+	    product = j
+	    for i_ind, i in enumerate(scaleFactors):
+		if i_ind != j_ind:
+		    product *= (1.0 - i)	    
+	    weight1 += product
+	
+	btagWeight = 1.0 - weight0 - weight1	
+	
+#	if btagWeight < 0: 
+#	    print "====> btagWeight = %f!!" % btagWeight
+#	else:
+#	    print "btagWeight = %f" % btagWeight
+	return btagWeight
+
+
+"""
+def getBtagSF(tree, selectedBjets, sysType, reader):
+    product = 1.0
+    scaleFactors = []
+    #num_gen_bjets = 0
+    bjet_cut = 2 if require_two_btags else 1
+    
+
+    if (bjet_cut == 0):
         return 1.0
     
-#    elif (num_gen_bjets == 1):
-#        btagWeight = 0.0
-#        for bjet in selectedBjets:
-#            jetPt = bjet[1]
-#            jetEta = tree.jetEta[bjet[0]]
-#            jetFlavor = abs(tree.jetPartonID[bjet[0]])  # Jet truth flavor
-#            print "jetFlavor =", jetFlavor
-#	    if jetFlavor == 5: # b jet
-#                scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt))
-#            elif jetFlavor == 4: # c jet
-#                None
-#            else:   # udsg jet
-#                scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_UDSG, jetEta, jetPt))
-#
-#	# TODO: Check this
-#	if len(scaleFactors) < 2:
-#	    print "len(scaleFactors) =", len(scaleFactors)
-#	    return 0.0
-#
-#	for j_ind, j in enumerate(scaleFactors):
-#	    product = j
-#	    for i_ind, i in enumerate(scaleFactors):
-#		if i_ind != j_ind:
-#		    product *= (1.0 - i)
-#	    btagWeight += product
-#
-#	return btagWeight
-#    
-    elif (num_gen_bjets >= 1):
-        btagWeight = 1.0
+    elif (bjet_cut == 1):
+        btagWeight = 0.0
         for bjet in selectedBjets:
             jetPt = bjet[1]
             jetEta = tree.jetEta[bjet[0]]
             jetFlavor = abs(tree.jetPartonID[bjet[0]])  # Jet truth flavor
-            if jetFlavor == 5: # b jet
-                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt)
+            #print "jetFlavor =", jetFlavor
+	    if jetFlavor == 5: # b jet
+                scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt))
+		#print "Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1]) 
+		if scaleFactors[-1] > 1:
+		    print "SF greater than 1!  Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1])
             elif jetFlavor == 4: # c jet
-                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_C, jetEta, jetPt)
+                scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt))
+		if scaleFactors[-1] > 1:
+		    print "SF greater than 1!  Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1])
             else:   # udsg jet
-                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_UDSG, jetEta, jetPt)
+                scaleFactors.append(reader.eval_auto_bounds(sysType, BTagEntry.FLAV_UDSG, jetEta, jetPt))
+		#print "Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1]) 
+		if scaleFactors[-1] > 1:
+		    print "SF greater than 1!  Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1])
 
-            btagWeight *= 1.0 - sf
+	# TODO: Check this
+	if len(scaleFactors) < 2:
+	    #print "len(selectedBjets) = %d\tlen(scaleFactors) = %d\tReturning weight 0!" % (len(selectedBjets), len(scaleFactors))
+	    return 0.0
+	print scaleFactors
 
-        return 1.0 - btagWeight
+	for j_ind, j in enumerate(scaleFactors):
+	    product = j
+	    for i_ind, i in enumerate(scaleFactors):
+		if i_ind != j_ind:
+		    product *= (1.0 - i)	    
+	    btagWeight += product
+	if btagWeight < 0: 
+	    print "*** btagWeight = %f!!" % btagWeight
 
-    elif (num_gen_bjets >= 2):
+	print "btagWeight = %f" % btagWeight
+	return btagWeight
+#    
+#    elif (bjet_cut >= 1):
+#        btagWeight = 1.0
+#        for bjet in selectedBjets:
+#            jetPt = bjet[1]
+#            jetEta = tree.jetEta[bjet[0]]
+#            jetFlavor = abs(tree.jetPartonID[bjet[0]])  # Jet truth flavor
+#            if jetFlavor == 5: # b jet
+#                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_B, jetEta, jetPt)
+#            elif jetFlavor == 4: # c jet
+#                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_C, jetEta, jetPt)
+#            else:   # udsg jet
+#                sf = reader.eval_auto_bounds(sysType, BTagEntry.FLAV_UDSG, jetEta, jetPt)
+#
+#            btagWeight *= 1.0 - sf
+#
+#        return 1.0 - btagWeight
+
+    elif (bjet_cut >= 2):
         tmpWeight_first = 1.0
         tmpWeight_second = 0.0
         weights = []
@@ -361,6 +427,7 @@ def getBtagSF(tree, selectedBjets, sysType, reader):
 
         # TODO: Check this
         if len(scaleFactors) < 2:
+	    print "len(scaleFactors) = %d. Returning weight 0!" % len(scaleFactors)
             return 0.0
 
         for j_ind, j in enumerate(scaleFactors):
@@ -373,7 +440,7 @@ def getBtagSF(tree, selectedBjets, sysType, reader):
 
         weights.append(tmpWeight_second)
         return 1.0 - tmpWeight_first - tmpWeight_second
-
+"""
 
 
 def make_hist(name, title, bins, xlabel="", ylabel=""):
@@ -883,7 +950,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
 		    if len(goodBJetList) > (1 if require_two_btags else 0):  # At least 1 b tagged jet 
 			totalGoodEntries += 1
-			if log_scale_factors and not tree.isData and not logF.closed and i < 100:
+			if log_scale_factors and not tree.isData and not logF.closed and i < debug_iter:
 			    logF.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.4f\n" % (i, elePt, eleSCEta, muPt, muEta, pileup_weight, eleIDSF, eleRecoSF, muIDBF_SF, muIsoBF_SF, muIDGH_SF, muIsoGH_SF, muTrkSF, trigSF, btagSF, weight))
 
 			histos["ele_mult"].Fill(len(goodEleList), weight)
