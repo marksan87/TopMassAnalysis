@@ -14,8 +14,89 @@ colors = [kRed, kOrange+1, kGreen+1, kBlack, kCyan, kBlue, kViolet-1]
 
 parser = ArgumentParser()
 parser.add_argument("path", help="path to directory of histogram files")
+parser.add_argument("--dist", "-d", default="pt_ll", help="kinematic distribution to analyze")
 args = parser.parse_args()
 
+
+def plot_templates(templates, title, outF):
+    cv = TCanvas(outF + "_templates", "cv", 1600, 1400)
+    template_rootF = TFile.Open(outF + ".root", "RECREATE")
+    p1 = TPad('p1','p1',0.0,0.95,1.0,0.0)
+    p1.Draw()
+    p1.SetRightMargin(0.05)
+    p1.SetLeftMargin(0.12)
+    p1.SetTopMargin(0.01)
+    p1.SetBottomMargin(0.25)
+    p1.SetGridx(True)
+    p1.cd()
+
+    for h in templates:
+	h.Write()
+    template_rootF.Close()
+
+    
+    l = TLegend(0.75, 0.75, 0.95, 0.95)
+    l.AddEntry(templates[0], "m_{t} = 166.5 GeV")
+    l.AddEntry(templates[1], "m_{t} = 169.5 GeV")
+    l.AddEntry(templates[2], "m_{t} = 171.5 GeV")
+    l.AddEntry(templates[3], "m_{t} = 172.5 GeV")
+    l.AddEntry(templates[4], "m_{t} = 173.5 GeV")
+    l.AddEntry(templates[5], "m_{t} = 175.5 GeV")
+    l.AddEntry(templates[6], "m_{t} = 178.5 GeV")
+
+    templates[0].GetYaxis().SetTitleOffset(1.5)
+    templates[0].GetYaxis().SetTitle("Normalized entries / bin")
+    templates[0].Draw("H HIST 9")
+    for i, h in enumerate(templates):
+	if i is 0: 
+	    continue
+	h.Draw("SAME H HIST 9")
+    l.Draw()
+
+    p2 = TPad('p2','p2',0.0,0.02,1.0,0.17)
+    p2.Draw()
+    p2.SetBottomMargin(0.01)
+    p2.SetRightMargin(0.05)
+    p2.SetLeftMargin(0.12)
+    p2.SetTopMargin(0.05)
+    p2.SetGridx(True)
+    p2.SetGridy(True)
+    p2.cd()
+    gStyle.SetOptStat(0)
+    ratioframe=(templates[3]).Clone('ratioframe')
+    ratioframe.SetTitle("")
+    ratioframe.GetYaxis().SetTitle('ratio to 172.5')
+    ratioframe.GetYaxis().SetRangeUser(0.7,1.3)
+    ratioframe.GetYaxis().SetNdivisions(5)
+    ratioframe.GetYaxis().SetLabelSize(0.18)        
+    ratioframe.GetYaxis().SetTitleSize(0.2)
+    ratioframe.GetYaxis().SetTitleOffset(0.2)
+    ratioframe.GetXaxis().SetLabelSize(0)
+    ratioframe.GetXaxis().SetTitleSize(0)
+    ratioframe.GetXaxis().SetTitleOffset(0)
+    ratioframe.Draw("SAME")
+
+    try:
+	gr_list = []
+	for rbs in templates:
+	    ratio=(templates[3]).Clone('ratio')
+	    ratio.SetDirectory(0)
+	    ratio.Divide(rbs)
+	    gr=TGraphAsymmErrors(ratio)
+	    gr.SetMarkerStyle(rbs.GetMarkerStyle())
+	    gr.SetMarkerSize(rbs.GetMarkerSize())
+	    gr.SetMarkerColor(rbs.GetMarkerColor())
+	    gr.SetLineColor(rbs.GetLineColor())
+	    gr.SetLineWidth(rbs.GetLineWidth())
+	    #gr.SetOptStat(0)
+	    gr_list.append(gr)
+
+	for g in gr_list:
+	    g.Draw("SAME p ")
+    except:
+	pass
+
+    cv.SaveAs(outF + ".png")
 
 
 c = TCanvas("c","c", 1600, 1400)
@@ -26,7 +107,7 @@ loc = args.path
 if loc[-1] != '/':
     loc += '/'
 
-CHI2_include_nomMass = False 
+CHI2_include_nomMass = True 
 
 #loc = "pileup_down/"
 # tW histos
@@ -34,13 +115,13 @@ f1 = TFile.Open(loc + "tW/mc_ST_tW_antitop_mt1695.root")
 f2 = TFile.Open(loc + "tW/mc_ST_tW_antitop_mt1755.root")
 f3 = TFile.Open(loc + "tW/mc_ST_tW_antitop.root")
 
-h169 = f1.Get("pt_ll")
+h169 = f1.Get(args.dist)
 h169.SetDirectory(0)   # Detaches hist from TFile so the file can be closed
 
-h175 = f2.Get("pt_ll")
+h175 = f2.Get(args.dist)
 h175.SetDirectory(0)
 
-h172 = f3.Get("pt_ll")
+h172 = f3.Get(args.dist)
 h172.SetDirectory(0)
 
 f1.Close()
@@ -51,13 +132,13 @@ f1 = TFile.Open(loc + "tW/mc_ST_tW_top_mt1695.root")
 f2 = TFile.Open(loc + "tW/mc_ST_tW_top_mt1755.root")
 f3 = TFile.Open(loc + "tW/mc_ST_tW_top.root")
 
-h1 = f1.Get("pt_ll")
+h1 = f1.Get(args.dist)
 h1.SetDirectory(0)   
 
-h2 = f2.Get("pt_ll")
+h2 = f2.Get(args.dist)
 h2.SetDirectory(0)
 
-h3 = f3.Get("pt_ll")
+h3 = f3.Get(args.dist)
 h3.SetDirectory(0)
 
 h169.Add(h1)
@@ -70,18 +151,18 @@ f3.Close()
 
 
 f1 = TFile.Open(loc + "mc_ST_s.root")
-st_bck = f1.Get("pt_ll")
+st_bck = f1.Get(args.dist)
 st_bck.SetDirectory(0)
 f1.Close()
 
 f1 = TFile.Open(loc + "mc_ST_t_antitop.root")
-htmp = f1.Get("pt_ll")
+htmp = f1.Get(args.dist)
 htmp.SetDirectory(0)
 st_bck.Add(htmp)
 f1.Close()
 
 f1 = TFile.Open(loc + "mc_ST_t_top.root")
-htmp = f1.Get("pt_ll")
+htmp = f1.Get(args.dist)
 htmp.SetDirectory(0)
 st_bck.Add(htmp)
 f1.Close()
@@ -94,10 +175,10 @@ tW_events = (h169.Integral() + h175.Integral() + h172.Integral())/3.0
 # tt histos
 tt_h = []
 tt_files = ["tt/mc_TT_mt1665.root", "tt/mc_TT_mt1695.root", "tt/mc_TT_mt1715.root", \
-	    "tt/mc_TT.root", "tt/mc_TT_mt1735.root", "tt/mc_TT_mt1755.root", "tt/mc_TT_mt1785.root"]
+		"tt/mc_TT.root", "tt/mc_TT_mt1735.root", "tt/mc_TT_mt1755.root", "tt/mc_TT_mt1785.root"]
 for ttF in tt_files:
     f = TFile.Open(loc + ttF)
-    h_tmp = f.Get("pt_ll")
+    h_tmp = f.Get(args.dist)
     h_tmp.SetDirectory(0)
     tt_h.append(h_tmp)
     f.Close()
@@ -112,6 +193,9 @@ tt_h[4].SetLineColor(kCyan)
 tt_h[5].SetLineColor(kBlue)
 tt_h[6].SetLineColor(kViolet-1)
 
+for h in tt_h:
+    h.SetLineWidth(2)
+
 sig = []
 for tth in tt_h:
     sig.append(tth.Clone())
@@ -120,8 +204,6 @@ for tth in tt_h:
 #    h.Scale(1.0 / h.Integral())
 
 tt_templates = TFile.Open("tt_templates.root", "RECREATE")
-
-
 p1 = TPad('p1','p1',0.0,0.95,1.0,0.0)
 p1.Draw()
 p1.SetRightMargin(0.05)
@@ -138,9 +220,27 @@ tt_h[3].SetName("tt_mt1725")
 tt_h[4].SetName("tt_mt1735")
 tt_h[5].SetName("tt_mt1755")
 tt_h[6].SetName("tt_mt1785")
+
+
+norm_tt_h = []
 for h in tt_h:
+    tempH = h.Clone()
+    tempH.SetDirectory(0)
+    tempH.Scale(1.0 / tempH.Integral())
+    norm_tt_h.append(tempH)
+
+
+for h in norm_tt_h:
     h.Write()
 tt_templates.Close()
+
+print "tt_h means:"
+for x in tt_h:
+    print x.GetMean()
+
+print "\ntt_h sigma:"
+for x in tt_h:
+    print x.GetRMS()
 
 #print "bin 8 contents for TT:"
 #for h in tt_h:
@@ -155,8 +255,10 @@ l.AddEntry(tt_h[4], "m_{t} = 173.5 GeV")
 l.AddEntry(tt_h[5], "m_{t} = 175.5 GeV")
 l.AddEntry(tt_h[6], "m_{t} = 178.5 GeV")
 
-tt_h[0].Draw("H HIST 9")
-for i, h in enumerate(tt_h):
+norm_tt_h[0].GetYaxis().SetTitle("Normalized events / bin")
+norm_tt_h[0].GetYaxis().SetTitleOffset(2.0)
+norm_tt_h[0].Draw("H HIST 9")
+for i, h in enumerate(norm_tt_h):
     if i is 0: continue
     h.Draw("SAME H HIST 9")
 
@@ -174,7 +276,7 @@ p2.SetGridy(True)
 p2.cd()
 gStyle.SetOptStat(0)
 ratioframe=(tt_h[3]).Clone('ratioframe')
-ratioframe.GetYaxis().SetTitle('ratio to nominal')
+ratioframe.GetYaxis().SetTitle('ratio to 172.5')
 ratioframe.GetYaxis().SetRangeUser(0.7,1.3)
 ratioframe.GetYaxis().SetNdivisions(5)
 ratioframe.GetYaxis().SetLabelSize(0.18)        
@@ -205,17 +307,19 @@ try:
 except:
     pass
 
-c.SaveAs("tt_pt_ll.jpg")
+c.SaveAs("tt_" + args.dist + ".png")
 
 f = TFile.Open(loc + "plotter.root")
-dirF = f.Get("pt_ll")
-data = dirF.Get("pt_ll")
+dirF = f.Get(args.dist)
+data = dirF.Get(args.dist)
+
 # Background subtraction
-data.Add(dirF.Get("pt_ll_Diboson"),-1)
-data.Add(dirF.Get("pt_ll_W"),-1)
-data.Add(dirF.Get("pt_ll_DY"),-1)
-data.Add(dirF.Get("pt_ll_t#bar{t}+V"),-1)
-data.Add(st_bck, -1)
+data.Add(dirF.Get(args.dist + "_Diboson"),-1)
+data.Add(dirF.Get(args.dist + "_W"),-1)
+data.Add(dirF.Get(args.dist + "_DY"),-1)
+data.Add(dirF.Get(args.dist + "_t#bar{t}+V"),-1)
+data.Add(dirF.Get(args.dist + "_ST"),-1)
+#data.Add(st_bck, -1)
 
 mcN = dirF.Get("totalmc")
 mcN.Scale(1.0/mcN.Integral())
@@ -240,10 +344,11 @@ for mc in mc_tot:
     mc.Scale(1.0/mc.Integral())
 """
 data.Scale(1.0/data.Integral())
-
+print "data: mean =", data.GetMean()
+print "data: RMS =", data.GetRMS()
 
 bins = [30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130]
-fine_bins = [15.8 + 5.8 * n for n in xrange(0, 22)]
+fine_bins = [15.8 + 5.8 * n for n in xrange(0, 25)]
 #print fine_bins
 bins = fine_bins
 nbins = 21
@@ -281,7 +386,7 @@ for w_ in tW:
     w_.Scale(1.0/w_.Integral())
     rebin_ = w_.Rebin(nbins, "tW rebinned", array('d', bins))
     rbtW.append(rebin_)
-    print "mean:", rebin_.GetMean()
+    #print "mean:", rebin_.GetMean()
 
 
 tW166.Write()
@@ -313,6 +418,18 @@ for tt in tt_h:
     norm_rebin_TT.append(tt.Rebin(nbins, "tt normalized rebinned", array('d',bins)))
 
 
+print "Rebinned data:"
+print "mean =", rbData.GetMean()
+print "sigma =", rbData.GetRMS()
+
+print "\nRebinned MC mean:"
+for h in rbTT:
+    print h.GetMean()
+
+print "\nRebinned MC sigma:"
+for h in rbTT:
+    print h.GetRMS()
+
 
 rbSig = []
 for h in sig:
@@ -335,10 +452,10 @@ sig_templates.Close()
 for h in sig:
     rbSig.append(h.Rebin(nbins, "signal rebinned", array('d',bins)))
 
-print "rebinned data:", rbData.GetMean()
-print "rebinned mc:"
-for x in rbSig:
-    print x.GetMean()
+#print "rebinned data:", rbData.GetMean()
+#print "rebinned mc:"
+#for x in rbSig:
+#    print x.GetMean()
 
 c = TCanvas('c','c',1000, 1000)
 c.SetBottomMargin(0.0)
@@ -412,7 +529,7 @@ try:
 	g.Draw("SAME p ")
 except:
     pass
-c.SaveAs("signal_pt_ll.jpg")
+c.SaveAs("signal" + args.dist +".png")
 
 #for h in rbTT:
 #    h.Scale(h.Integral())
@@ -461,6 +578,10 @@ mass = [166.5, 169.5, 171.5, 173.5, 175.5, 178.5]
 #chi2s = [chi1665, chi1695, chi1715, chi1735, chi1755, chi1785]
 
 def graphChi2(nom, mc, masses, nom_mt, name):
+
+    print "====================="
+    print "Chi2 values for mt =", nom_mt
+    
     gr = TGraph()
     gStyle.SetMarkerColor(kBlue)
     gStyle.SetLineColor(kBlue)
@@ -473,10 +594,11 @@ def graphChi2(nom, mc, masses, nom_mt, name):
 	np=gr.GetN()
 	chi2 = float(nom.Chi2Test(mc[i], "WW  CHI2"))
 	gr.SetPoint(np,m,chi2)
+	print chi2
     gr.SetMarkerStyle(22)
     gr.Fit('pol2')
     gr.Draw('AP PLC PMC')
-
+    print "====================="
     pol2 = gr.GetFunction("pol2")
     minx = pol2.GetMinimumX(166,188)
     print minx
@@ -530,7 +652,7 @@ def graphChi2(nom, mc, masses, nom_mt, name):
     txt.SetTextSize(20)
     txt.SetTextAlign(12)
     txt.DrawLatex(0.18,0.92,'#bf{CMS} #it{Preliminary} %3.1f fb^{-1} (13 TeV)' % (35.9) )
-    c1.SaveAs(name + ".jpg")
+    c1.SaveAs(name + ".png")
 
 #signal = [rbSig[0], rbSig[1], rbSig[2], rbSig[3], rbSig[4], rbSig[5], rbSig[6]]
 #signal = [rbTT[0], rbTT[1], rbTT[2], rbTT[3], rbTT[4], rbTT[5], rbTT[6]]
@@ -639,4 +761,6 @@ l.AddEntry(h178, "mt = 178.5 GeV")
 l.Draw()
 
 
-
+plot_templates(tt_h, "reg_tt_templates", "reg_tt_templates")
+plot_templates(norm_tt_h, "tt_templates", "norm_tt_templates")
+plot_templates(norm_rebin_TT, "norm_rebinned_tt_templates", "norm_rebinned_tt_templates")

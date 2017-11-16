@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from array import array
+import os
 import optparse
 import operator
 import os,sys
@@ -13,7 +14,7 @@ from subprocess import Popen, PIPE
 
 
 PI = ROOT.TMath.Pi()
-log_scale_factors = False 
+log_scale_factors = True
 require_two_btags = False 
 require_two_jets = True
 use_tight_eleID = True
@@ -25,7 +26,7 @@ fine_binw = 5.8
 debug = False 
 debug_iter = 1000
 
-enable_roc_corrections = False # Rochester muon corrections done at skim level
+enable_roc_corrections = False  # Rochester muon corrections done at skim level
 if enable_roc_corrections:
     gROOT.ProcessLine(".L Roc_muon_corrections/RoccoR.cc+")
     from ROOT import RoccoR
@@ -180,6 +181,23 @@ lumiGH = 16146.2
 #############################################################################
 btag_disc = 0.8484 
 btag_loose = 0.5426
+
+
+# Will create a directory in the current path if it doesn't exist, and return false if there is an error.
+def mkdir(path):
+    try:
+        os.makedirs(path)
+        # Successfully created new directory
+        return True
+    except OSError:
+        if not os.path.isdir(path):
+            print "Unable to create directory:", path
+            return False
+        else:
+            # Directory already exists
+            return True
+
+
 
 # Region 0: barrel
 # Region 1: endcap
@@ -454,12 +472,26 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     """
     Perform the analysis on a single file
     """
-    print '...analysing %s' % inFileName                                           
+    print '...analysing %s' % inFileName
+
+    # Cutflow table
+    # Entries: [eu, jet, bjet]
+    cutflow = [0, 0, 0]
+
+    pt_ll_rec_16bins = [10.0, 23.17131943141237, 32.18569885764156, 39.60462286891421, 46.12340920161678, 51.97834804268123, 57.43814633771619, 62.85237542300829, 68.35340061285042, 73.95557401849604, 79.86801168006713, 86.36792023906511, 93.76572289546236, 102.40245430880857, 113.62115557216005, 130.87054030878411, 178.2]
+    pt_ll_rec_32bins = [10.0, 18.369791717417908, 24.564946693077683, 29.77215442463719, 34.41719725093281, 38.61626637421721, 42.46354734016703, 46.12340920161678, 49.54251124325757, 52.760235895277674, 55.88778730566342, 58.98197015482969, 62.06961778905669, 65.2072610646701, 68.35340061285042, 71.55016404807125, 74.79716176886909, 78.16351277036131, 81.69667865226529, 85.35401259666159, 89.42546343763628, 93.76572289546236, 98.49945923653077, 103.8419431189069, 110.07121617666915, 117.72458176758295, 127.75861912991853, 142.9933087379969, 178.2] 
+
+
     #jet_mult_bins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     jet_mult_bins = [-0.5 + n for n in range(16)]
     vertex_mult_bins = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50]
     eta_bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4]
     pt_bins = [20,30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]
+     
+    if use_fine_bins:
+	pt_bins = [10.0 + fine_binw * n for n in xrange(0,30)]
+    
+
     eta_signed_bins = [-3.0, -2.8, -2.6, -2.4, -2.2, -2.0, -1.8, -1.6, -1.4, -1.2, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0]
     #lepton_mult_bins = [0, 1, 2, 3, 4, 5]
     #lepton_high_mult_bins = [3, 4, 5] 
@@ -473,11 +505,14 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     flavor_bins = [-0.5 + n for n in range(5)]
     pileup_weight_bins = [-0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
 
-    if use_fine_bins:
-	pt_bins = [10.0 + fine_binw * n for n in xrange(0,30)]
 
     histos = {}
-   
+
+    histos["pt_ll_rec16"] = make_hist("pt_ll_rec16", "p_{T}(l^{+}l^{-}) reco", pt_ll_rec_16bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    
+    histos["pt_ll_rec32"] = make_hist("pt_ll_rec32", "p_{T}(l^{+}l^{-}) reco", pt_ll_rec_32bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+
+    
     # Diagnostic plots
     histos["diag_lepton_mult"] = make_hist("diag_lepton_mult", "Lepton multiplicity (diag)", lepton_mult_bins, "Lepton multiplicity", "Events/bin")
     histos["diag_lepton_high_mult"] = make_hist("diag_lepton_high_mult", "Lepton multiplicity > 2 (diag)", lepton_high_mult_bins, "Lepton multiplicity", "Events/bin")
@@ -538,6 +573,18 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     histos["M_ll"] = make_hist("M_ll", "M(l^{+}l^{-})", invariant_mass_bins, "M(l^{+}l^{-}) [GeV]", "Events/bin")
     histos["Ep_Em"] = make_hist("Ep_Em", "E(l^{+}) + E(l^{-})", e_sum_bins,"E(l^{+}) + E(l^{-}) [GeV]", "Events/bin")
     histos["ptp_ptm"] = make_hist("ptp_ptm", "p_{T}(l^{+}) + p_{T}(l^{-})", pt_sum_bins, "p_{T}(l^{+}) + p_{T}(l^{-}) [GeV]", "Events/bin")
+
+
+    # Gen level distributions
+    histos["pt_ll_gen"] = make_hist("pt_ll_gen", "p_{T}(l^{+}l^{-}) gen", pt_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    histos["pt_ll_gen16"] = make_hist("pt_ll_gen16", "p_{T}(l^{+}l^{-}) gen", pt_ll_rec_16bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    
+    histos["pt_pos_gen"] = make_hist("pt_pos_gen", "p_{T}(l^{+}) gen", pt_bins, "p_{T}(l^{+}) [GeV]", "Events/bin")
+    histos["E_pos_gen"] = make_hist("E_pos_gen", "E(l^{+}) gen", energy_bins, "E(l^{+}) [GeV]", "Events/bin") 
+    histos["M_ll_gen"] = make_hist("M_ll_gen", "M(l^{+}l^{-}) gen", invariant_mass_bins, "M(l^{+}l^{-}) [GeV]", "Events/bin")
+    histos["Ep_Em_gen"] = make_hist("Ep_Em_gen", "E(l^{+}) + E(l^{-}) gen", e_sum_bins,"E(l^{+}) + E(l^{-}) [GeV]", "Events/bin")
+    histos["ptp_ptm_gen"] = make_hist("ptp_ptm_gen", "p_{T}(l^{+}) + p_{T}(l^{-}) gen", pt_sum_bins, "p_{T}(l^{+}) + p_{T}(l^{-}) [GeV]", "Events/bin")
+
 
 
     for key in histos:
@@ -885,70 +932,79 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    #if not passTrig: continue
 	    #######################################
 
-	    if ll.M() > 20:    # Cut on invariant mass of the lepton pair	
-		if len(goodJetList) > (1 if require_two_jets else 0):	    # At least 1 jet 
-		    if not tree.isData:
-			# Compute lepton scale factors
-			# Ele SFs stored in 2D histogram: (x,y) = (eta_sc, pt)
-			eleSCEta = tree.eleSCEta[e_ind]
-			elePt = tree.elePt[e_ind]
-			#eleSF  = eleID_SF.GetBinContent(eleID_SF.FindBin(eleSCEta, max(min(150.0, elePt), 25.0)))
-			eleIDSF  = eleID_SF.GetBinContent(eleID_SF.FindBin(eleSCEta, max(25.0, min(150.0, elePt))))
-			eleRecoSF = eleReco_SF.GetBinContent(eleReco_SF.FindBin(eleSCEta, max(25.0, min(150.0, elePt))))
-			
-			eleSF = eleIDSF * eleRecoSF
-			if eleSF == 0.0: print "eleSF = 0, SCEta = ", eleSCEta, "  Pt = ", elePt
-			weight *= eleSF
-			
-			muEta = tree.muEta[mu_ind]
-			muAEta = abs(muEta)
-			muPt = tree.muPt[mu_ind]
-			# Mu SFs stored in 2D histogram: (x,y) = (abs(eta), pt)
-			muIDBF_SF  = muID_SF_BF.GetBinContent(muID_SF_BF.FindBin(muAEta, max(25.0, min(119.9, muPt))))
-			muIsoBF_SF = muIso_SF_BF.GetBinContent(muIso_SF_BF.FindBin(muAEta, max(25.0, min(119.9, muPt))))
-			muIDGH_SF  = muID_SF_GH.GetBinContent(muID_SF_GH.FindBin(muAEta, max(25.0, min(119.9, muPt))))
-			muIsoGH_SF = muIso_SF_GH.GetBinContent(muIso_SF_GH.FindBin(muAEta, max(25.0, min(119.9, muPt))))
-			
-			muBF_SF = muIDBF_SF * muIsoBF_SF
-			muGH_SF = muIDGH_SF * muIsoGH_SF
-			if muBF_SF == 0.0: print "muBF_SF = 0!"
-			if muGH_SF == 0.0: print "muGH_SF = 0!"
-
-			muTrkSF = muTrack_SF.Eval(muEta)
-			if muTrkSF == 0.0: print "muTrkSF = 0, muEta = ", muEta
-			
-			if not disable_trigger_SFs:	
-			    """	
-			    mu8ele23_SF = 0.0
-			    mu23ele8_SF = 0.0
-			    if (tree.HLTEleMuX >> 23 & 1) | (tree.HLTEleMuX >> 24 & 1):
-				mu8ele23_SF = mu8_SF.GetBinContent(mu8_SF.FindBin(muEta, min(199.9, muPt))) * \
-					  ele23_SF.GetBinContent(ele23_SF.FindBin(eleSCEta, min(99.9, elePt)))
-
-			    if (tree.HLTEleMuX >> 25 & 1) | (tree.HLTEleMuX >> 26 & 1):
-				mu23ele8_SF = mu23_SF.GetBinContent(mu23_SF.FindBin(muEta, min(199.9, muPt))) * \
-					  ele8_SF.GetBinContent(ele8_SF.FindBin(eleSCEta, min(99.9, elePt)))
-			    
-			    trigSF = (max(mu8ele23_SF, mu23ele8_SF))**0.5
-			    if i < 10: print trigSF	
-			    """
-
-			    # Clamp pt to 99.9 GeV
-			    # xaxis: leading lepton pt
-			    # yaxis: trailing lepton pt
-			    trigSF = trigger_SF.GetBinContent(trigger_SF.FindBin(min(99.9, max(elePt, muPt)), min(99.9, min(elePt, muPt)))) 
-			    if trigSF == 0.0: print "trigSF = 0!"
-			else:
-			    trigSF = 1.0
-			
-			btagSF = getBtagSF(tree, goodBJetList, "central", reader)
-
-                        weight *= (lumiBF * muBF_SF + lumiGH * muGH_SF) * muTrkSF * trigSF * btagSF	
-		    
-		    histos["jet_mult_before_bcut"].Fill(len(goodJetList), weight)
+	    
+	    if not tree.isData:
+		# Compute lepton scale factors
+		# Ele SFs stored in 2D histogram: (x,y) = (eta_sc, pt)
+		eleSCEta = tree.eleSCEta[e_ind]
+		elePt = tree.elePt[e_ind]
+		#eleSF  = eleID_SF.GetBinContent(eleID_SF.FindBin(eleSCEta, max(min(150.0, elePt), 25.0)))
+		eleIDSF  = eleID_SF.GetBinContent(eleID_SF.FindBin(eleSCEta, max(25.0, min(150.0, elePt))))
+		eleRecoSF = eleReco_SF.GetBinContent(eleReco_SF.FindBin(eleSCEta, max(25.0, min(150.0, elePt))))
 		
+		eleSF = eleIDSF * eleRecoSF
+		if eleSF == 0.0: print "eleSF = 0, SCEta = ", eleSCEta, "  Pt = ", elePt
+		weight *= eleSF
+		
+		muEta = tree.muEta[mu_ind]
+		muAEta = abs(muEta)
+		muPt = tree.muPt[mu_ind]
+		# Mu SFs stored in 2D histogram: (x,y) = (abs(eta), pt)
+		muIDBF_SF  = muID_SF_BF.GetBinContent(muID_SF_BF.FindBin(muAEta, max(25.0, min(119.9, muPt))))
+		muIsoBF_SF = muIso_SF_BF.GetBinContent(muIso_SF_BF.FindBin(muAEta, max(25.0, min(119.9, muPt))))
+		muIDGH_SF  = muID_SF_GH.GetBinContent(muID_SF_GH.FindBin(muAEta, max(25.0, min(119.9, muPt))))
+		muIsoGH_SF = muIso_SF_GH.GetBinContent(muIso_SF_GH.FindBin(muAEta, max(25.0, min(119.9, muPt))))
+		
+		muBF_SF = muIDBF_SF * muIsoBF_SF
+		muGH_SF = muIDGH_SF * muIsoGH_SF
+		if muBF_SF == 0.0: print "muBF_SF = 0!"
+		if muGH_SF == 0.0: print "muGH_SF = 0!"
+
+		muTrkSF = muTrack_SF.Eval(muEta)
+		if muTrkSF == 0.0: print "muTrkSF = 0, muEta = ", muEta
+		
+		if not disable_trigger_SFs:	
+		    """	
+		    mu8ele23_SF = 0.0
+		    mu23ele8_SF = 0.0
+		    if (tree.HLTEleMuX >> 23 & 1) | (tree.HLTEleMuX >> 24 & 1):
+			mu8ele23_SF = mu8_SF.GetBinContent(mu8_SF.FindBin(muEta, min(199.9, muPt))) * \
+				  ele23_SF.GetBinContent(ele23_SF.FindBin(eleSCEta, min(99.9, elePt)))
+
+		    if (tree.HLTEleMuX >> 25 & 1) | (tree.HLTEleMuX >> 26 & 1):
+			mu23ele8_SF = mu23_SF.GetBinContent(mu23_SF.FindBin(muEta, min(199.9, muPt))) * \
+				  ele8_SF.GetBinContent(ele8_SF.FindBin(eleSCEta, min(99.9, elePt)))
+		    
+		    trigSF = (max(mu8ele23_SF, mu23ele8_SF))**0.5
+		    if i < 10: print trigSF	
+		    """
+
+		    # Clamp pt to 99.9 GeV
+		    # xaxis: leading lepton pt
+		    # yaxis: trailing lepton pt
+		    trigSF = trigger_SF.GetBinContent(trigger_SF.FindBin(min(99.9, max(elePt, muPt)), min(99.9, min(elePt, muPt)))) 
+		    if trigSF == 0.0: print "trigSF = 0!"
+		else:
+		    trigSF = 1.0
+		
+		weight *= (lumiBF * muBF_SF + lumiGH * muGH_SF) * muTrkSF * trigSF 
+
+
+	    if ll.M() > 20:    # Cut on invariant mass of the lepton pair	
+		# Increment cutflow table
+		cutflow[0] += weight
+
+		if len(goodJetList) > (1 if require_two_jets else 0):	    # Jet cut
+		    cutflow[1] += weight
+		    histos["jet_mult_before_bcut"].Fill(len(goodJetList), weight)
 
 		    if len(goodBJetList) > (1 if require_two_btags else 0):  # At least 1 b tagged jet 
+			if not tree.isData:
+			    btagSF = getBtagSF(tree, goodBJetList, "central", reader)
+			    weight *= btagSF
+
+			cutflow[2] += weight
+
 			totalGoodEntries += 1
 			if log_scale_factors and not tree.isData and not logF.closed and i < debug_iter:
 			    logF.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.4f\n" % (i, elePt, eleSCEta, muPt, muEta, pileup_weight, eleIDSF, eleRecoSF, muIDBF_SF, muIsoBF_SF, muIDGH_SF, muIsoGH_SF, muTrkSF, trigSF, btagSF, weight))
@@ -962,7 +1018,12 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 			histos["M_ll"].Fill(ll.M(), weight)
 			histos["Ep_Em"].Fill(lp.E() + lm.E(), weight)
 			histos["ptp_ptm"].Fill(lp.Pt() + lm.Pt(), weight)
-			    
+	
+
+			histos["pt_ll_rec16"].Fill(ll.Pt(), weight)
+			histos["pt_ll_rec32"].Fill(ll.Pt(), weight)
+
+
 			totalEle.append(ele)
 			totalMu.append(mu)
 
@@ -999,11 +1060,85 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 			    histos["lepton_high_mult"].Fill(n_leptons, weight)
 			
 			histos["vertex_mult"].Fill(tree.nVtx, weight)
-			if not isData: histos["pileup_weights"].Fill(pileup_weight, 1)
+			if not isData: 
+			    histos["pileup_weights"].Fill(pileup_weight, 1)
+
+			    # Gen level distributions
+			    gen_e = TLorentzVector()
+			    gen_mu = TLorentzVector()
+			    gen_ll = TLorentzVector()
+			    
+
+			    sel_ele_pid = 11 if tree.eleCharge[e_ind] < 0 else -11
+			    sel_ele_pt = tree.elePt[e_ind]
+			    sel_mu_pid = 13 if tree.muCharge[mu_ind] < 0 else -13 
+			    sel_mu_pt = tree.muPt[mu_ind]
+
+			    ele_pt_diff = 9999.0
+			    mu_pt_diff = 9999.0
+			    ele_gen_index = -1
+			    mu_gen_index = -1
+
+			    for g in range(tree.nMC):
+				if tree.mcPID[g] == sel_ele_pid:
+				    deltaElePt = abs(sel_ele_pt - tree.mcPt[g])
+				    if deltaElePt < ele_pt_diff:
+					ele_pt_diff = deltaElePt
+					ele_gen_index = g
+
+				elif tree.mcPID[g] == sel_mu_pid:
+				    deltaMuPt = abs(sel_mu_pt - tree.mcPt[g])
+				    if deltaMuPt < mu_pt_diff:
+					mu_pt_diff = deltaMuPt
+					mu_gen_index = g
+
+		#	    if ele_gen_index < 0:
+		#		print "Couldn't find gen electron in file %s_%d event %d!" % (inFileName, file_index, i)
+		#	    if mu_gen_index < 0:
+		#		print "Couldn't find gen muon in file %s_%d event %d!" % (inFileName, file_index, i)
+
+			    if ele_gen_index >= 0 and mu_gen_index >= 0:
+				gen_e.SetPtEtaPhiM(tree.mcPt[ele_gen_index], tree.mcEta[ele_gen_index], tree.mcPhi[ele_gen_index], tree.mcMass[ele_gen_index])
+				gen_mu.SetPtEtaPhiM(tree.mcPt[mu_gen_index], tree.mcEta[mu_gen_index], tree.mcPhi[mu_gen_index], tree.mcMass[mu_gen_index])
+				gen_ll = gen_e + gen_mu
+
+		#		if ele_pt_diff > 0.1 * sel_ele_pt:
+		#		    print "File %s_%d entry %d: gen ele pt = %f\trec ele pt = %f" % (inFileName, file_index, i, gen_e.Pt(), sel_ele_pt)
+		#		if mu_pt_diff > 0.1 * sel_mu_pt:
+		#		    print "File %s_%d entry %d: gen mu pt = %f\trec mu pt = %f" % (inFileName, file_index, i, gen_mu.Pt(), sel_mu_pt)
+				
+				if sel_ele_pid < 0: 
+				    gen_lp = gen_e
+				    gen_lm = gen_mu
+				else:
+				    gen_lp = gen_mu
+				    gen_lm = gen_e
+
+				histos["pt_ll_gen"].Fill(gen_ll.Pt(), weight)
+				histos["pt_ll_gen16"].Fill(gen_ll.Pt(), weight)
+
+				histos["pt_pos_gen"].Fill(gen_lp.Pt(), weight)
+				histos["E_pos_gen"].Fill(gen_lp.E(), weight)
+				histos["M_ll_gen"].Fill(gen_ll.M(), weight)
+				histos["Ep_Em_gen"].Fill(gen_lp.E() + lm.E(), weight)
+				histos["ptp_ptm_gen"].Fill(gen_lp.Pt() + lm.Pt(), weight)
+
+
+
     # end of main for loop 
     if log_scale_factors and not isData:
 	if not logF.closed:
 	    logF.close()
+
+    # Write cutflow table
+    if not mkdir(outFileURL[:outFileURL.find("/")] + "/cutflow"):
+	print "Unable to create cutflow directory", outFileURL[:outFileURL.find("/")] + "/cutflow"
+    else:
+	with open("%s/cutflow/%s.tx" % (outFileURL[:outFileURL.find("/")+1], outFileURL[outFileURL.find("/")+1 : outFileURL.find(".")]), "w+") as cutF:
+	    for val in cutflow:
+		cutF.write(str(val) + "\n")
+
+
     #print "pileup average weight: "
     sys.stdout.write('\r [ 100/100 ] done\n' )
     sys.stdout.flush()
