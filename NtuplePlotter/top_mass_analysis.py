@@ -209,6 +209,7 @@ def detector_region(SCEta):
 def transition_region_veto(SCEta):
     return False if 1.4442 < abs(SCEta) < 1.5660 else True
 
+
 def dR(eta1, phi1, eta2, phi2):
     dphi = phi2 - phi1
     deta = eta2 - eta1
@@ -389,8 +390,7 @@ def getBtagSF(tree, selectedBjets, sysType, reader):
 		    print "SF greater than 1!  Jet flavor = %d\teta = %f\tpt = %f\tSF = %f" % (jetFlavor, jetEta, jetPt, scaleFactors[-1])
 
 	# TODO: Check this
-	if len(scaleFactors) < 2:
-	    #print "len(selectedBjets) = %d\tlen(scaleFactors) = %d\tReturning weight 0!" % (len(selectedBjets), len(scaleFactors))
+	if len(scaleFactors) < 2: #print "len(selectedBjets) = %d\tlen(scaleFactors) = %d\tReturning weight 0!" % (len(selectedBjets), len(scaleFactors))
 	    return 0.0
 	print scaleFactors
 
@@ -629,6 +629,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     if not tree.isData:
         xsec_weight = 1.0 * xsec / n_mc_events
 	if log_scale_factors:
+	    mkdir("logs")
 	    logF = open("logs/%s_%d.tx" % (inFileName, file_index), 'w+')
             logF.write("Entry\tEpT\tESCEta\tMupT\tMuEta\tPU\tEleID\tEleReco\tMuIDBF\tMuIsoBF\tMuIDGH\tMuIsoGH\tMuTrk\tTrig\tBtag\tTotal\n")
 
@@ -1074,22 +1075,23 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 			    sel_mu_pid = 13 if tree.muCharge[mu_ind] < 0 else -13 
 			    sel_mu_pt = tree.muPt[mu_ind]
 
-			    ele_pt_diff = 9999.0
-			    mu_pt_diff = 9999.0
+			    ele_dR = 9999.0
+			    mu_dR = 9999.0
 			    ele_gen_index = -1
 			    mu_gen_index = -1
 
 			    for g in range(tree.nMC):
+				if tree.mcPt[g] <= 0.0 or abs(tree.mcEta[g]) > 2.4: continue
 				if tree.mcPID[g] == sel_ele_pid:
-				    deltaElePt = abs(sel_ele_pt - tree.mcPt[g])
-				    if deltaElePt < ele_pt_diff:
-					ele_pt_diff = deltaElePt
+				    new_ele_dR = dR(tree.eleEta[e_ind], tree.elePhi[e_ind], tree.mcEta[g], tree.mcPhi[g])
+				    if new_ele_dR < ele_dR:
+					ele_dR = new_ele_dR
 					ele_gen_index = g
 
 				elif tree.mcPID[g] == sel_mu_pid:
-				    deltaMuPt = abs(sel_mu_pt - tree.mcPt[g])
-				    if deltaMuPt < mu_pt_diff:
-					mu_pt_diff = deltaMuPt
+				    new_mu_dR = dR(tree.muEta[mu_ind], tree.muPhi[mu_ind], tree.mcEta[g], tree.mcPhi[g])
+				    if new_mu_dR < mu_dR:
+					mu_dR = new_mu_dR
 					mu_gen_index = g
 
 		#	    if ele_gen_index < 0:
@@ -1102,10 +1104,12 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 				gen_mu.SetPtEtaPhiM(tree.mcPt[mu_gen_index], tree.mcEta[mu_gen_index], tree.mcPhi[mu_gen_index], tree.mcMass[mu_gen_index])
 				gen_ll = gen_e + gen_mu
 
-		#		if ele_pt_diff > 0.1 * sel_ele_pt:
-		#		    print "File %s_%d entry %d: gen ele pt = %f\trec ele pt = %f" % (inFileName, file_index, i, gen_e.Pt(), sel_ele_pt)
-		#		if mu_pt_diff > 0.1 * sel_mu_pt:
-		#		    print "File %s_%d entry %d: gen mu pt = %f\trec mu pt = %f" % (inFileName, file_index, i, gen_mu.Pt(), sel_mu_pt)
+			#	print "File %s_%d entry %d: gen ele pt = %f\trec ele pt = %f" % (inFileName, file_index, i, gen_e.Pt(), sel_ele_pt)
+			#	print "File %s_%d entry %d: gen mu pt = %f\trec mu pt = %f" % (inFileName, file_index, i, gen_mu.Pt(), sel_mu_pt)
+			#	if abs(sel_ele_pt - gen_e.Pt()) > 0.1 * sel_ele_pt:
+			#	    print "File %s_%d entry %d: gen ele pt = %f\trec ele pt = %f" % (inFileName, file_index, i, gen_e.Pt(), sel_ele_pt)
+			#	if abs(sel_mu_pt - gen_mu.Pt()) > 0.1 * sel_mu_pt:
+			#	    print "File %s_%d entry %d: gen mu pt = %f\trec mu pt = %f" % (inFileName, file_index, i, gen_mu.Pt(), sel_mu_pt)
 				
 				if sel_ele_pid < 0: 
 				    gen_lp = gen_e
