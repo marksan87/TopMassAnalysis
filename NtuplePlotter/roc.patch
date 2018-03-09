@@ -1,0 +1,43 @@
+diff -ruN Roc_old/RoccoR.cc Roc_muon_corrections/RoccoR.cc
+--- Roc_old/RoccoR.cc	2017-02-06 12:53:48.000000000 -0600
++++ Roc_muon_corrections/RoccoR.cc	2018-03-09 17:03:18.255671057 -0600
+@@ -6,6 +6,9 @@
+ #include "TSystem.h"
+ #include "TMath.h"
+ #include "RoccoR.h"
++const double CrystalBall::pi    = TMath::Pi();
++const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
++const double CrystalBall::S2    = sqrt(2.0);
+ 
+ 
+ int RocRes::getBin(double x, const int NN, const double *b) const{
+diff -ruN Roc_old/RoccoR.h Roc_muon_corrections/RoccoR.h
+--- Roc_old/RoccoR.h	2017-02-05 09:33:17.000000000 -0600
++++ Roc_muon_corrections/RoccoR.h	2018-03-09 17:02:59.913413390 -0600
+@@ -1,5 +1,10 @@
++#ifndef ROCCOR_H
++#define ROCCOR_H
++
+ #include "TRandom3.h"
+ #include "TMath.h"
++#include <iostream>
++using namespace std;
+ 
+ struct CrystalBall{
+     static const double pi;
+@@ -89,9 +94,6 @@
+ 	return m - S2*s*TMath::ErfInverse((D - u/Ns ) / SPiO2);
+     }
+ };
+-const double CrystalBall::pi    = TMath::Pi();
+-const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
+-const double CrystalBall::S2    = sqrt(2.0);
+ 
+ 
+ class RocRes{
+@@ -219,3 +221,5 @@
+     private:
+ 	std::vector<std::vector<RocOne> > RC;
+ };
++
++#endif

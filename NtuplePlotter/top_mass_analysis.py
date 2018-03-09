@@ -8,7 +8,7 @@ import json
 import pickle
 import random
 import ROOT
-from ROOT import gROOT, BTagEntry, TH1F, TH2F, TFile, TLorentzVector, TRandom3
+from ROOT import gROOT, BTagEntry, TH1F, TH2F, TTree, TFile, TLorentzVector, TRandom3
 from PyleupRW import PyleupRW
 from subprocess import Popen, PIPE
 
@@ -25,6 +25,8 @@ fine_binw = 5.8
 
 debug = False 
 debug_iter = 1000
+DEBUG_FILE = "mc_TT"
+
 
 enable_roc_corrections = False  # Rochester muon corrections done at skim level
 if enable_roc_corrections:
@@ -460,6 +462,13 @@ def getBtagSF(tree, selectedBjets, sysType, reader):
         return 1.0 - tmpWeight_first - tmpWeight_second
 """
 
+def make_rmatrix(name, title, xbins, ybins, xlabel="", ylabel=""):
+    r = TH2F(name, title, len(xbins)-1, array('d',xbins), len(ybins)-1, array('d', ybins))
+    r.GetXaxis().SetTitle(xlabel)
+    r.GetYaxis().SetTitle(ylabel)
+    r.SetTitle(title)
+    return r
+
 
 def make_hist(name, title, bins, xlabel="", ylabel=""):
     h = TH1F(name, title, len(bins)-1, array('d', bins))
@@ -468,7 +477,7 @@ def make_hist(name, title, bins, xlabel="", ylabel=""):
     h.SetTitle(title)
     return h
 
-def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pileupFile, xsec=None, n_mc_events=None):
+def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pileupFile, noHistos, xsec=None, n_mc_events=None):
     """
     Perform the analysis on a single file
     """
@@ -478,8 +487,8 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     # Entries: [eu, jet, bjet]
     cutflow = [0, 0, 0]
 
-    pt_ll_rec_16bins = [10.0, 23.17131943141237, 32.18569885764156, 39.60462286891421, 46.12340920161678, 51.97834804268123, 57.43814633771619, 62.85237542300829, 68.35340061285042, 73.95557401849604, 79.86801168006713, 86.36792023906511, 93.76572289546236, 102.40245430880857, 113.62115557216005, 130.87054030878411, 178.2]
-    pt_ll_rec_32bins = [10.0, 18.369791717417908, 24.564946693077683, 29.77215442463719, 34.41719725093281, 38.61626637421721, 42.46354734016703, 46.12340920161678, 49.54251124325757, 52.760235895277674, 55.88778730566342, 58.98197015482969, 62.06961778905669, 65.2072610646701, 68.35340061285042, 71.55016404807125, 74.79716176886909, 78.16351277036131, 81.69667865226529, 85.35401259666159, 89.42546343763628, 93.76572289546236, 98.49945923653077, 103.8419431189069, 110.07121617666915, 117.72458176758295, 127.75861912991853, 142.9933087379969, 178.2] 
+    pt_ll_16_bins = [10.0, 23.17131943141237, 32.18569885764156, 39.60462286891421, 46.12340920161678, 51.97834804268123, 57.43814633771619, 62.85237542300829, 68.35340061285042, 73.95557401849604, 79.86801168006713, 86.36792023906511, 93.76572289546236, 102.40245430880857, 113.62115557216005, 130.87054030878411, 178.2]
+    pt_ll_32_bins = [10.0, 18.369791717417908, 24.564946693077683, 29.77215442463719, 34.41719725093281, 38.61626637421721, 42.46354734016703, 46.12340920161678, 49.54251124325757, 52.760235895277674, 55.88778730566342, 58.98197015482969, 62.06961778905669, 65.2072610646701, 68.35340061285042, 71.55016404807125, 74.79716176886909, 78.16351277036131, 81.69667865226529, 85.35401259666159, 89.42546343763628, 93.76572289546236, 98.49945923653077, 103.8419431189069, 110.07121617666915, 117.72458176758295, 127.75861912991853, 142.9933087379969, 178.2] 
 
 
     #jet_mult_bins = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
@@ -487,7 +496,9 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     vertex_mult_bins = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50]
     eta_bins = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4]
     pt_bins = [20,30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250]
-     
+    
+    pt_ll_50_bins = [20 + 5*n for n in range(51)]
+
     if use_fine_bins:
 	pt_bins = [10.0 + fine_binw * n for n in xrange(0,30)]
     
@@ -508,9 +519,9 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
     histos = {}
 
-    histos["pt_ll_rec16"] = make_hist("pt_ll_rec16", "p_{T}(l^{+}l^{-}) reco", pt_ll_rec_16bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
-    
-    histos["pt_ll_rec32"] = make_hist("pt_ll_rec32", "p_{T}(l^{+}l^{-}) reco", pt_ll_rec_32bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    histos["pt_ll_rec16"] = make_hist("pt_ll_rec16", "p_{T}(l^{+}l^{-}) reco", pt_ll_16_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")    
+    histos["pt_ll_rec32"] = make_hist("pt_ll_rec32", "p_{T}(l^{+}l^{-}) reco", pt_ll_32_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    histos["pt_ll_50"] = make_hist("pt_ll_50", "p_{T}(l^{+}l^{-}) reco", pt_ll_50_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
 
     
     # Diagnostic plots
@@ -574,10 +585,13 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
     histos["Ep_Em"] = make_hist("Ep_Em", "E(l^{+}) + E(l^{-})", e_sum_bins,"E(l^{+}) + E(l^{-}) [GeV]", "Events/bin")
     histos["ptp_ptm"] = make_hist("ptp_ptm", "p_{T}(l^{+}) + p_{T}(l^{-})", pt_sum_bins, "p_{T}(l^{+}) + p_{T}(l^{-}) [GeV]", "Events/bin")
 
+    # Response matrices
+    histos["r_pt_ll"] = make_rmatrix("r_pt_ll", "Response Matrix p_{T}(l^{+}l^{-})", pt_ll_16_bins, pt_ll_32_bins, "p_{T}(l^{+}l^{-}) gen [GeV]", "p_{T}(l^{+}l^{-}) reco [GeV]")
+    histos["r_pt_ll_weight1"] = make_rmatrix("r_pt_ll_weight1", "Response Matrix p_{T}(l^{+}l^{-}) (weight = 1)", pt_ll_16_bins, pt_ll_32_bins, "p_{T}(l^{+}l^{-}) gen [GeV]", "p_{T}(l^{+}l^{-}) reco [GeV]")
 
     # Gen level distributions
     histos["pt_ll_gen"] = make_hist("pt_ll_gen", "p_{T}(l^{+}l^{-}) gen", pt_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
-    histos["pt_ll_gen16"] = make_hist("pt_ll_gen16", "p_{T}(l^{+}l^{-}) gen", pt_ll_rec_16bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
+    histos["pt_ll_gen16"] = make_hist("pt_ll_gen16", "p_{T}(l^{+}l^{-}) gen", pt_ll_16_bins, "p_{T}(l^{+}l^{-}) [GeV]", "Events/bin")
     
     histos["pt_pos_gen"] = make_hist("pt_pos_gen", "p_{T}(l^{+}) gen", pt_bins, "p_{T}(l^{+}) [GeV]", "Events/bin")
     histos["E_pos_gen"] = make_hist("E_pos_gen", "E(l^{+}) gen", energy_bins, "E(l^{+}) [GeV]", "Events/bin") 
@@ -598,6 +612,44 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
     tfile_dir = fIn.Get("ggNtuplizer")
     tree=tfile_dir.Get("EventTree")
+
+
+    # Tree to store the pt of good events
+    goodEventTree = TTree("goodEvents", "Tree of pTs of good events")
+    goodEventTree.SetDirectory(0)
+    goodEvent_rec_ptll = array('f', [0.])
+    goodEvent_gen_ptll = array('f', [0.])
+    goodEvent_rec_ptpos = array('f', [0.])
+    goodEvent_gen_ptpos = array('f', [0.])
+    goodEvent_rec_Epos = array('f', [0.])
+    goodEvent_gen_Epos = array('f', [0.])
+    goodEvent_rec_ptp_ptm = array('f', [0.])
+    goodEvent_gen_ptp_ptm = array('f', [0.])
+    goodEvent_rec_Ep_Em = array('f', [0.])
+    goodEvent_gen_Ep_Em = array('f', [0.])
+    goodEvent_rec_Mll = array('f', [0.])
+    goodEvent_gen_Mll = array('f', [0.])
+
+    goodEvent_weight = array('f', [0.])
+    goodEventTree.Branch("rec_ptll", goodEvent_rec_ptll, "rec_ptll/F") 
+    goodEventTree.Branch("gen_ptll", goodEvent_gen_ptll, "gen_ptll/F") 
+    goodEventTree.Branch("rec_ptpos", goodEvent_rec_ptpos, "rec_ptpos/F") 
+    goodEventTree.Branch("gen_ptpos", goodEvent_gen_ptpos, "gen_ptpos/F") 
+    goodEventTree.Branch("rec_Epos", goodEvent_rec_Epos, "rec_Epos/F") 
+    goodEventTree.Branch("gen_Epos", goodEvent_gen_Epos, "gen_Epos/F") 
+    goodEventTree.Branch("rec_ptp_ptm", goodEvent_rec_ptp_ptm, "rec_ptp_ptm/F") 
+    goodEventTree.Branch("gen_ptp_ptm", goodEvent_gen_ptp_ptm, "gen_ptp_ptm/F") 
+    goodEventTree.Branch("rec_Ep_Em", goodEvent_rec_Ep_Em, "rec_Ep_Em/F") 
+    goodEventTree.Branch("gen_Ep_Em", goodEvent_gen_Ep_Em, "gen_Ep_Em/F") 
+    goodEventTree.Branch("rec_Mll", goodEvent_rec_Mll, "rec_Mll/F") 
+    goodEventTree.Branch("gen_Mll", goodEvent_gen_Mll, "gen_Mll/F") 
+    goodEventTree.Branch("weight", goodEvent_weight, "weight/F")
+
+    #goodEvent_rec_ptll = 5.0
+    #goodEvent_gen_ptll = 1.7
+    #goodEventTree.Fill()
+    #print "Before analysis: goodEventTree"
+    #goodEventTree.Print()
 
     # If xsec == None then this is a data file, otherwise it is mc
     isData = True if xsec == None else False
@@ -648,7 +700,21 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	goodMuList = []
 	goodJetList = []
 	goodBJetList = []
-	
+
+	goodEvent_rec_ptll[0] = -1.0
+	goodEvent_gen_ptll[0] = -1.0
+	goodEvent_rec_ptpos[0] = -1.0
+	goodEvent_gen_ptpos[0] = -1.0
+	goodEvent_rec_Epos[0] = -1.0
+	goodEvent_gen_Epos[0] = -1.0
+	goodEvent_rec_ptp_ptm[0] = -1.0
+	goodEvent_gen_ptp_ptm[0] = -1.0
+	goodEvent_rec_Ep_Em[0] = -1.0
+	goodEvent_gen_Ep_Em[0] = -1.0
+	goodEvent_rec_Mll[0] = -1.0
+	goodEvent_gen_Mll[0] = -1.0
+	goodEvent_weight[0] = -1.0
+
 	# Intermediate values. Use the above lists to access good leptons/jets
 	# Dictionary format  { index: pt }
 	# Ex: { 0: 97.5, 1: 36.2, 2: 79.4, 3: 34.9, 4: 124.8 )
@@ -668,7 +734,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    weight = 1.0 * pileup_weight * xsec_weight
 	
 	
-	histos["vertex_mult_raw"].Fill(tree.nVtx, 1.0 if tree.isData else weight * luminosity)
+	if not noHistos: histos["vertex_mult_raw"].Fill(tree.nVtx, 1.0 if tree.isData else weight * luminosity)
 
 	ele = TLorentzVector()
 	mu = TLorentzVector()
@@ -794,25 +860,25 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	    uu_pt = mu0_pt + mu1_pt
 
 	    if eu_pt > ee_pt and eu_pt > uu_pt:
-		histos["diag_flavor_mult"].Fill(0, diag_weight)
+		if not noHistos: histos["diag_flavor_mult"].Fill(0, diag_weight)
 		None
 
 	    elif ee_pt > uu_pt:
-		histos["diag_flavor_mult"].Fill(1, diag_weight)
+		if not noHistos: histos["diag_flavor_mult"].Fill(1, diag_weight)
 		None
 
 	    else:
-		histos["diag_flavor_mult"].Fill(2, diag_weight)
+		if not noHistos: histos["diag_flavor_mult"].Fill(2, diag_weight)
 		None
 
 	    numEle = len(goodEleList)
 	    numMu = len(goodMuList)
-	    histos["diag_lepton_mult"].Fill(numEle + numMu, diag_weight)
+	    if not noHistos: histos["diag_lepton_mult"].Fill(numEle + numMu, diag_weight)
 	    if numEle + numMu > 2:
-		histos["diag_lepton_high_mult"].Fill(numEle + numMu, diag_weight)
+		if not noHistos: histos["diag_lepton_high_mult"].Fill(numEle + numMu, diag_weight)
 		None
 
-	    histos["diag_vertex_mult"].Fill(tree.nVtx, diag_weight)
+	    if not noHistos: histos["diag_vertex_mult"].Fill(tree.nVtx, diag_weight)
 
 	    ev = TLorentzVector()
 	    mv = TLorentzVector()
@@ -823,19 +889,21 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 		for e in goodEleList:
 		    ev.SetPtEtaPhiM(tree.elePt[e[0]], tree.eleEta[e[0]], tree.elePhi[e[0]], 0.)
 
-		    histos["diag_ele_pt"].Fill(ev.Pt(), diag_weight)
-		    histos["diag_ele_eta"].Fill(abs(ev.Eta()), diag_weight)
-		    histos["diag_ele_eta_signed"].Fill(ev.Eta(), diag_weight)
-		    histos["diag_ele_sc_eta"].Fill(abs(tree.eleSCEta[e[0]]), diag_weight)
-		    histos["diag_ele_sc_eta_signed"].Fill(tree.eleSCEta[e[0]], diag_weight)
+		    if not noHistos: 
+			histos["diag_ele_pt"].Fill(ev.Pt(), diag_weight)
+			histos["diag_ele_eta"].Fill(abs(ev.Eta()), diag_weight)
+			histos["diag_ele_eta_signed"].Fill(ev.Eta(), diag_weight)
+			histos["diag_ele_sc_eta"].Fill(abs(tree.eleSCEta[e[0]]), diag_weight)
+			histos["diag_ele_sc_eta_signed"].Fill(tree.eleSCEta[e[0]], diag_weight)
 
 	    if len(goodMuList) > 0:
 		for m in goodMuList:
 		    mv.SetPtEtaPhiM(tree.muPt[m[0]], tree.muEta[m[0]], tree.muPhi[m[0]], 0.)
 
-		    histos["diag_mu_pt"].Fill(mv.Pt(), diag_weight)
-		    histos["diag_mu_eta"].Fill(abs(mv.Eta()), diag_weight)
-		    histos["diag_mu_eta_signed"].Fill(mv.Eta(), diag_weight)
+		    if not noHistos:
+			histos["diag_mu_pt"].Fill(mv.Pt(), diag_weight)
+			histos["diag_mu_eta"].Fill(abs(mv.Eta()), diag_weight)
+			histos["diag_mu_eta_signed"].Fill(mv.Eta(), diag_weight)
 
 	    jmult = 0
 	    if len(goodJetList) > 0:
@@ -843,21 +911,22 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 		    jv.SetPtEtaPhiM(tree.jetPt[j[0]], tree.jetEta[j[0]], tree.jetPhi[j[0]], 0.)
 		    jmult += 1
 
-		    histos["diag_jet_pt"].Fill(jv.Pt(), diag_weight)
-		    histos["diag_jet_eta"].Fill(jv.Eta(), diag_weight)
+		    if not noHistos: 
+			histos["diag_jet_pt"].Fill(jv.Pt(), diag_weight)
+			histos["diag_jet_eta"].Fill(jv.Eta(), diag_weight)
 
-		histos["diag_jet_mult"].Fill(jmult, diag_weight)
+		if not noHistos: histos["diag_jet_mult"].Fill(jmult, diag_weight)
 
 	    bjmult = 0
 	    if len(goodBJetList) > 0:
 		for bj in goodBJetList:
 		    bv.SetPtEtaPhiM(tree.jetPt[bj[0]], tree.jetEta[bj[0]], tree.jetPhi[bj[0]], 0.)
 		    bjmult += 1
-		    
-		    histos["diag_bjet_pt"].Fill(bv.Pt(), diag_weight)
-		    histos["diag_bjet_eta"].Fill(bv.Eta(), diag_weight)
+		    if not noHistos: 
+			histos["diag_bjet_pt"].Fill(bv.Pt(), diag_weight)
+			histos["diag_bjet_eta"].Fill(bv.Eta(), diag_weight)
 
-		histos["diag_bjet_mult"].Fill(bjmult, diag_weight)
+		if not noHistos: histos["diag_bjet_mult"].Fill(bjmult, diag_weight)
 	    
 
 	#############################
@@ -997,7 +1066,7 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
 		if len(goodJetList) > (1 if require_two_jets else 0):	    # Jet cut
 		    cutflow[1] += weight
-		    histos["jet_mult_before_bcut"].Fill(len(goodJetList), weight)
+		    if not noHistos: histos["jet_mult_before_bcut"].Fill(len(goodJetList), weight)
 
 		    if len(goodBJetList) > (1 if require_two_btags else 0):  # At least 1 b tagged jet 
 			if not tree.isData:
@@ -1009,60 +1078,75 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 			totalGoodEntries += 1
 			if log_scale_factors and not tree.isData and not logF.closed and i < debug_iter:
 			    logF.write("%d\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.4f\n" % (i, elePt, eleSCEta, muPt, muEta, pileup_weight, eleIDSF, eleRecoSF, muIDBF_SF, muIsoBF_SF, muIDGH_SF, muIsoGH_SF, muTrkSF, trigSF, btagSF, weight))
+			if not noHistos: 
+			    histos["ele_mult"].Fill(len(goodEleList), weight)
+			    histos["mu_mult"].Fill(len(goodMuList), weight)
 
-			histos["ele_mult"].Fill(len(goodEleList), weight)
-			histos["mu_mult"].Fill(len(goodMuList), weight)
+			    histos["pt_pos"].Fill(lp.Pt(), weight)
+			    histos["pt_ll"].Fill(ll.Pt(), weight)
+			    histos["E_pos"].Fill(lp.E(), weight)
+			    histos["M_ll"].Fill(ll.M(), weight)
+			    histos["Ep_Em"].Fill(lp.E() + lm.E(), weight)
+			    histos["ptp_ptm"].Fill(lp.Pt() + lm.Pt(), weight)
+	    
 
-			histos["pt_pos"].Fill(lp.Pt(), weight)
-			histos["pt_ll"].Fill(ll.Pt(), weight)
-			histos["E_pos"].Fill(lp.E(), weight)
-			histos["M_ll"].Fill(ll.M(), weight)
-			histos["Ep_Em"].Fill(lp.E() + lm.E(), weight)
-			histos["ptp_ptm"].Fill(lp.Pt() + lm.Pt(), weight)
-	
+			    histos["pt_ll_rec16"].Fill(ll.Pt(), weight)
+			    histos["pt_ll_rec32"].Fill(ll.Pt(), weight)
+			    histos["pt_ll_50"].Fill(ll.Pt(), weight)
 
-			histos["pt_ll_rec16"].Fill(ll.Pt(), weight)
-			histos["pt_ll_rec32"].Fill(ll.Pt(), weight)
+			# Set tree branch values
+			
+			goodEvent_rec_ptll[0] = ll.Pt()
+			goodEvent_rec_ptpos[0] = lp.Pt()
+			goodEvent_rec_Epos[0] = lp.E()
+			goodEvent_rec_ptp_ptm[0] = lp.Pt() + lm.Pt()
+			goodEvent_rec_Ep_Em[0] = lp.E() + lm.E()
+			goodEvent_rec_Mll[0] = ll.M()
+			goodEvent_weight[0] = weight
 
 
 			totalEle.append(ele)
 			totalMu.append(mu)
 
-			histos["ele_pt"].Fill(ele.Pt(), weight)
-			histos["ele_eta"].Fill(abs(ele.Eta()), weight)
-			histos["ele_eta_signed"].Fill(ele.Eta(), weight)
-			histos["ele_sc_eta"].Fill(abs(tree.eleSCEta[e_ind]), weight)
-			histos["ele_sc_eta_signed"].Fill(tree.eleSCEta[e_ind], weight)
-			histos["mu_pt"].Fill(mu.Pt(), weight)
-			histos["mu_eta"].Fill(abs(mu.Eta()), weight)
-			histos["mu_eta_signed"].Fill(mu.Eta(), weight)
+			if not noHistos: 
+			    histos["ele_pt"].Fill(ele.Pt(), weight)
+			    histos["ele_eta"].Fill(abs(ele.Eta()), weight)
+			    histos["ele_eta_signed"].Fill(ele.Eta(), weight)
+			    histos["ele_sc_eta"].Fill(abs(tree.eleSCEta[e_ind]), weight)
+			    histos["ele_sc_eta_signed"].Fill(tree.eleSCEta[e_ind], weight)
+			    histos["mu_pt"].Fill(mu.Pt(), weight)
+			    histos["mu_eta"].Fill(abs(mu.Eta()), weight)
+			    histos["mu_eta_signed"].Fill(mu.Eta(), weight)
 
 			for jet_ind in xrange(0, len(goodJetList)):
 			    jet.SetPtEtaPhiM(tree.jetPt[jet_ind], tree.jetEta[jet_ind], tree.jetPhi[jet_ind], 0.)
 			    totalJets.append(jet)
-			    histos["jet_pt"].Fill(jet.Pt(), weight)
-			    histos["jet_eta"].Fill(jet.Eta(), weight)
+			    if not noHistos: 
+				histos["jet_pt"].Fill(jet.Pt(), weight)
+				histos["jet_eta"].Fill(jet.Eta(), weight)
 			    if jet_ind == 0: 
-				histos["leading_jet_pt"].Fill(jet.Pt(), weight)
+				if not noHistos: histos["leading_jet_pt"].Fill(jet.Pt(), weight)
 			    elif jet_ind == 1:
-				histos["subleading_jet_pt"].Fill(jet.Pt(), weight)
+				if not noHistos: histos["subleading_jet_pt"].Fill(jet.Pt(), weight)
 						
 			for bjet_ind in xrange(0, len(goodBJetList)):
-			    histos["bjet_pt"].Fill(tree.jetPt[bjet_ind], weight)
-			    histos["bjet_eta"].Fill(tree.jetEta[bjet_ind], weight)
+			    if not noHistos: 
+				histos["bjet_pt"].Fill(tree.jetPt[bjet_ind], weight)
+				histos["bjet_eta"].Fill(tree.jetEta[bjet_ind], weight)
 
-			histos["jet_mult"].Fill(len(goodJetList), weight)
-			histos["bjet_mult"].Fill(len(goodBJetList), weight)
+			if not noHistos: 
+			    histos["jet_mult"].Fill(len(goodJetList), weight)
+			    histos["bjet_mult"].Fill(len(goodBJetList), weight)
 			
 			n_leptons = len(goodEleList) + len(goodMuList)	
-			histos["lepton_mult"].Fill(n_leptons, weight) 
+			if not noHistos: histos["lepton_mult"].Fill(n_leptons, weight) 
 			if n_leptons > 2:
 			    #print "\nlepton_mult = %s\n" % (lepton_mult)
-			    histos["lepton_high_mult"].Fill(n_leptons, weight)
+			    if not noHistos: histos["lepton_high_mult"].Fill(n_leptons, weight)
 			
-			histos["vertex_mult"].Fill(tree.nVtx, weight)
+			if not noHistos: histos["vertex_mult"].Fill(tree.nVtx, weight)
 			if not isData: 
-			    histos["pileup_weights"].Fill(pileup_weight, 1)
+			    if not noHistos: histos["pileup_weights"].Fill(pileup_weight, 1)
 
 			    # Gen level distributions
 			    gen_e = TLorentzVector()
@@ -1118,17 +1202,34 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 				    gen_lp = gen_mu
 				    gen_lm = gen_e
 
-				histos["pt_ll_gen"].Fill(gen_ll.Pt(), weight)
-				histos["pt_ll_gen16"].Fill(gen_ll.Pt(), weight)
+				goodEvent_gen_ptll[0] = gen_ll.Pt()
+				goodEvent_gen_ptpos[0] = gen_lp.Pt()
+				goodEvent_gen_Epos[0] = gen_lp.E()
+				goodEvent_gen_ptp_ptm[0] = gen_lp.Pt() + gen_lm.Pt()
+				goodEvent_gen_Ep_Em[0] = gen_lp.E() + gen_lm.E()
+				goodEvent_gen_Mll[0] = gen_ll.M()
 
-				histos["pt_pos_gen"].Fill(gen_lp.Pt(), weight)
-				histos["E_pos_gen"].Fill(gen_lp.E(), weight)
-				histos["M_ll_gen"].Fill(gen_ll.M(), weight)
-				histos["Ep_Em_gen"].Fill(gen_lp.E() + lm.E(), weight)
-				histos["ptp_ptm_gen"].Fill(gen_lp.Pt() + lm.Pt(), weight)
+				if not noHistos: 
+				    histos["pt_ll_gen"].Fill(gen_ll.Pt(), weight)
+				    histos["pt_ll_gen16"].Fill(gen_ll.Pt(), weight)
 
-
-
+				    histos["pt_pos_gen"].Fill(gen_lp.Pt(), weight)
+				    histos["E_pos_gen"].Fill(gen_lp.E(), weight)
+				    histos["M_ll_gen"].Fill(gen_ll.M(), weight)
+				    histos["Ep_Em_gen"].Fill(gen_lp.E() + gen_lm.E(), weight)
+				    histos["ptp_ptm_gen"].Fill(gen_lp.Pt() + gen_lm.Pt(), weight)
+				    
+				    
+				    histos["r_pt_ll"].Fill(gen_ll.Pt(), ll.Pt(), weight)
+				    histos["r_pt_ll_weight1"].Fill(gen_ll.Pt(), ll.Pt(), 1.0)
+			
+			#if inFileName.find(DEBUG_FILE) > -1: 
+			 #   print "%s  Event %d" % (inFileName, i)
+			#    print goodEvent_rec_ptll
+			#    print goodEvent_gen_ptll
+			#    print goodEvent_weight 
+			#    print goodEventTree.Scan()
+			goodEventTree.Fill()
     # end of main for loop 
     if log_scale_factors and not isData:
 	if not logF.closed:
@@ -1141,7 +1242,9 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 	with open("%s/cutflow/%s.tx" % (outFileURL[:outFileURL.find("/")+1], outFileURL[outFileURL.find("/")+1 : outFileURL.find(".")]), "w+") as cutF:
 	    for val in cutflow:
 		cutF.write(str(val) + "\n")
-
+    
+    #if inFileName.find(DEBUG_FILE) > -1:
+#	print "%s  TTree\n" % inFileName, goodEventTree.Scan()
 
     #print "pileup average weight: "
     sys.stdout.write('\r [ 100/100 ] done\n' )
@@ -1154,7 +1257,20 @@ def runAnalysis(inFileDir, inFileName, file_index, outFileURL, mc_file_list, pil
 
     # Save histograms to file
     fOut=ROOT.TFile.Open(outFileURL,'RECREATE')
-    for key in histos: histos[key].Write()
+    if not noHistos:
+	for key in histos: histos[key].Write()
+    
+#    print "goodEventTree entries:", goodEventTree.GetEntriesFast()
+#    if goodEventTree.GetEntriesFast() >= 1:
+#	for i in range(2):
+#	    goodEventTree.GetEntry(i)
+#	    print "goodEventTree.rec_ptll =", goodEventTree.rec_ptll
+#	    print "goodEventTree.gen_ptll =", goodEventTree.gen_ptll
+#	    print "goodEventTree.weight =", goodEventTree.weight
+    
+    # Save good event tree
+    goodEventTree.Write()
+    #fOut.Write()
     fOut.Close()
 
 
@@ -1169,8 +1285,9 @@ def runAnalysisPacked(args):
 				 outFileURL=args[3],
 				 mc_file_list=args[4],
 				 pileupFile=args[5],
-                                 xsec=args[6],
-				 n_mc_events=args[7])
+				 noHistos=args[6],
+                                 xsec=args[7],
+				 n_mc_events=args[8])
     except :
         print 50*'<'
         print "  Problem  (%s) with %s continuing without"%(sys.exc_info()[1],args[0])
@@ -1197,6 +1314,7 @@ def main():
     parser.add_option('-o', '--outDir',      dest='outDir',      help='output directory',             default='analysis',  type='string') 
     parser.add_option('-p', '--puF',	     dest='puF',         help='path to pilup histogram file', default=None,        type='string')
     parser.add_option('-n', '--njobs',       dest='njobs',       help='# jobs to run in parallel',    default=0,           type='int')
+    parser.add_option('--no-histos',	     dest='noHistos',	 help='only output event trees',      default=False, action="store_true")
     (opt, args) = parser.parse_args()
 
     #read list of samples
@@ -1238,12 +1356,12 @@ def main():
 	
 	for n in xrange(0, num_files_in_sample[index]):
 	    outFileURL = "%s/%s_%d.root" % (opt.outDir, sample, n)
-	    taskList.append( (opt.inDir, sample, n, outFileURL, mc_file_list, opt.puF, xsec, n_mc_events) )
+	    taskList.append( (opt.inDir, sample, n, outFileURL, mc_file_list, opt.puF, opt.noHistos, xsec, n_mc_events) )
     
     # Run the analysis jobs
     if opt.njobs == 0:
         for inFileDir, inFileName, outFileURL, mc_file_list, xsec, n_mc_events in taskList:
-            runAnalysis(inFileDir=inFileDir, inFileName=inFileName, numFiles=1, outFileURL=outFileURL, pileupFile=opt.puF, xsec=xsec, n_mc_events=n_mc_events)
+            runAnalysis(inFileDir=inFileDir, inFileName=inFileName, numFiles=1, outFileURL=outFileURL, pileupFile=opt.puF, noHistos=opt.noHistos, xsec=xsec, n_mc_events=n_mc_events)
     else:  
 	from multiprocessing import Pool
 	pool = Pool(opt.njobs)	

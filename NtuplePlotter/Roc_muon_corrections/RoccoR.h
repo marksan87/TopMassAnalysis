@@ -1,3 +1,6 @@
+#ifndef ROCCOR_H
+#define ROCCOR_H
+
 #include "TRandom3.h"
 #include "TMath.h"
 #include <iostream>
@@ -91,9 +94,6 @@ struct CrystalBall{
 	return m - S2*s*TMath::ErfInverse((D - u/Ns ) / SPiO2);
     }
 };
-const double CrystalBall::pi    = TMath::Pi();
-const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
-const double CrystalBall::S2    = sqrt(2.0);
 
 
 class RocRes{
@@ -221,3 +221,5 @@ class RoccoR{
     private:
 	std::vector<std::vector<RocOne> > RC;
 };
+
+#endif

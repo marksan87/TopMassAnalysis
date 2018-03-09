@@ -6,6 +6,9 @@
 #include "TSystem.h"
 #include "TMath.h"
 #include "RoccoR.h"
+const double CrystalBall::pi    = TMath::Pi();
+const double CrystalBall::SPiO2 = sqrt(TMath::Pi()/2.0);
+const double CrystalBall::S2    = sqrt(2.0);
 
 
 int RocRes::getBin(double x, const int NN, const double *b) const{

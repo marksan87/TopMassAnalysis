@@ -158,7 +158,7 @@ EventTree::EventTree(int nFiles, char** fileNames){
 	chain->SetBranchStatus("eleConvVeto",1);
 	chain->SetBranchAddress("eleConvVeto", &eleConvVeto_);
 	
-	eledEtaseedAtVtx_ = new vector<int>;
+	eledEtaseedAtVtx_ = new vector<float>;
 	chain->SetBranchStatus("eledEtaseedAtVtx",1);
 	chain->SetBranchAddress("eledEtaseedAtVtx", &eledEtaseedAtVtx_);
 

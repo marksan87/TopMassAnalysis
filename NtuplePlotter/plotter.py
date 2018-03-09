@@ -11,6 +11,9 @@ from ROOT import kBlue
 _canvas_width = 1000
 _canvas_height = 1000
 
+useGrid = False
+
+
 _plottypes = {} #"bjet_eta":"Bjet #eta", 
 	  #  "bjet_mult":"Bjet Multiplicity",
 	  #  "bjet_pt":"Bjet p_{T}",
@@ -133,7 +136,7 @@ class Plot(object):
         p1.SetLeftMargin(0.12)
         p1.SetTopMargin(0.01)
         p1.SetBottomMargin(0.12)
-        p1.SetGridx(True)
+        p1.SetGridx(useGrid)
 	self._garbageList.append(p1)
         p1.cd()
 
@@ -233,8 +236,9 @@ class Plot(object):
         p2.SetRightMargin(0.05)
         p2.SetLeftMargin(0.12)
         p2.SetTopMargin(0.05)
-        p2.SetGridx(True)
+        p2.SetGridx(useGrid)
         p2.SetGridy(True)
+        #p2.SetGridy(useGrid)
         self._garbageList.append(p2)
         p2.cd()
         ratioframe=frame.Clone('ratioframe')
@@ -432,16 +436,20 @@ def main():
     os.system('mkdir -p %s' % outDir)
     #print plots
     for p in plots : 
-        if opt.saveLog    : plots[p].savelog=True
-	
-	######################################################################################
-        # if not opt.silent : plots[p].show(outDir=outDir,lumi=opt.lumi,saveTeX=opt.saveTeX)
-        if not opt.silent : plots[p].show(outDir=outDir,lumi=opt.lumi,title=p, noScale=True, saveTeX=opt.saveTeX)
-	###################################################################################################
-	#plots[p].SetTitle(p)
-	#print p
-	plots[p].appendTo(outDir+'/plotter.root')
-        plots[p].reset()
+        try:
+	    if opt.saveLog    : plots[p].savelog=True
+	    
+	    ######################################################################################
+	    # if not opt.silent : plots[p].show(outDir=outDir,lumi=opt.lumi,saveTeX=opt.saveTeX)
+	    if not opt.silent : plots[p].show(outDir=outDir,lumi=opt.lumi,title=p, noScale=True, saveTeX=opt.saveTeX)
+	    ###################################################################################################
+	    #plots[p].SetTitle(p)
+	    #print p
+	    plots[p].appendTo(outDir+'/plotter.root')
+	    plots[p].reset()
+	except:
+	    print "Error plotting %s" % p
+	    continue
 
     print '-'*50
     print 'Plots and summary ROOT file can be found in %s' % outDir

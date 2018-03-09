@@ -1,7 +1,7 @@
 #!/bin/csh
 source /cvmfs/cms.cern.ch/cmsset_default.csh
 
-cd plots2017
+cd plots2018
 hadd -f mc_DYJetsToLL.root mc_DYJetsToLL_*
 hadd -f mc_ST_s.root mc_ST_s_*
 hadd -f mc_ST_tW_antitop.root mc_ST_tW_antitop_*
