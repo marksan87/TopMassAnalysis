@@ -24,7 +24,8 @@ public:
 
 	RoccoR* rc;  // Rochester muon pt corrector
 	TRandom3* rand;
-    
+
+    bool applyRochesterCorrections;
 
 	// selected object indices
 	std::vector<int> Electrons;

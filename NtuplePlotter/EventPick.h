@@ -8,6 +8,8 @@
 #include<TH1F.h>
 #include"EventTree.h"
 #include"Selector.h"
+using std::cout;
+using std::endl;
 
 class EventPick{
 public:

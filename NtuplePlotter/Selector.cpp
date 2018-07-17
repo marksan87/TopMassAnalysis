@@ -15,12 +15,14 @@ Selector::Selector(){
 	rand = new TRandom3();
 	// jets
 	jet_pt_cut = 25;
-	jet_eta_cut = 2.4;
+	
+    jet_eta_cut = 2.4;
 	btag_cut = 0.8484;
 
 	// Muons
-	mu_pt_loose_cut = 10.0;
-	mu_RelIsoLoose_cut = 0.25;
+	mu_pt_loose_cut = 15.0;
+    // Use tight iso cut for skim sync test
+	mu_RelIsoLoose_cut = 0.15;//  0.25;
         mu_RelIso_range[0] = 0.0;
         mu_RelIso_range[1] = 0.15;
 	mu_Iso_invert = false;
@@ -88,12 +90,14 @@ void Selector::filter_muons(){
 		double eta = tree->muEta_->at(muInd);
 
 		//  Apply rochestor correction
-		if (tree->isData_) {
-		    tree->muPt_->at(muInd) *= rc->kScaleDT(tree->muCharge_->at(muInd), tree->muPt_->at(muInd), tree->muEta_->at(muInd), tree->muPhi_->at(muInd)); 
-		}
-		else {
-		    tree->muPt_->at(muInd) *= rc->kScaleAndSmearMC(tree->muCharge_->at(muInd), tree->muPt_->at(muInd), tree->muEta_->at(muInd), tree->muPhi_->at(muInd), tree->muTrkLayers_->at(muInd), rand->Rndm(), rand->Rndm());
-		}
+		if (applyRochesterCorrections) {
+            if (tree->isData_) {
+                tree->muPt_->at(muInd) *= rc->kScaleDT(tree->muCharge_->at(muInd), tree->muPt_->at(muInd), tree->muEta_->at(muInd), tree->muPhi_->at(muInd)); 
+            }
+            else {
+                tree->muPt_->at(muInd) *= rc->kScaleAndSmearMC(tree->muCharge_->at(muInd), tree->muPt_->at(muInd), tree->muEta_->at(muInd), tree->muPhi_->at(muInd), tree->muTrkLayers_->at(muInd), rand->Rndm(), rand->Rndm());
+            }
+        }
 
 		double pt = tree->muPt_->at(muInd);
 		double frelIsocorr = ( tree->muPFChIso_->at(muInd) + 

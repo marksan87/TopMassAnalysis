@@ -1,9 +1,12 @@
 #include "EventPick.h"
 
 const bool include_singleLep_triggers = true;
-const bool use_data_triggers = true; 
-const bool use_mc_triggers = false;
+const bool use_data_triggers = false; 
+const bool use_mc_triggers = true;
 const bool runH = false;    // Disable non-DZ triggers for Run H
+
+const int lumis = 3214;
+const int event = 514866; 
 
 
 double secondMinDr(int myInd, const EventTree* tree);
@@ -139,11 +142,11 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 	}
 	
 	if (use_mc_triggers) {
-	    passTriggers |= (tree->HLTEleMuX_ >> 51 & 1) | 
-			    (tree->HLTEleMuX_ >> 52 & 1) |
+	    passTriggers |= (tree->HLTEleMuX_ >> 45 & 1) | 
+			    (tree->HLTEleMuX_ >> 46 & 1) |
 			    (tree->HLTEleMuX_ >> 23 & 1) |
-			    (tree->HLTEleMuX_ >> 53 & 1) |
-			    (tree->HLTEleMuX_ >> 54 & 1);
+			    (tree->HLTEleMuX_ >> 51 & 1) |
+			    (tree->HLTEleMuX_ >> 52 & 1);
 	}
 
 	// DEPRICATED
@@ -200,6 +203,27 @@ void EventPick::process_event(const EventTree* inp_tree, const Selector* inp_sel
 	if ( passPreSel &&  bJets.size() > 0) {
 		cutFlow->Fill(4.0); cutFlowWeight->Fill(4.0,weight);
 	}
+
+
+    if (tree->lumis_ == lumis && tree->event_ == event)
+    {
+        cout<<"Lumi "<<lumis<<" event "<<event<<endl;
+        cout<<"Vertex cut: "<<(passVertexCut ? "passed" : "failed")<<endl;
+        cout<<"\ttree->nVtx_ = "<<tree->nVtx_<<endl;
+        cout<<"\ttree->nGoodVtx_ = "<<tree->nGoodVtx_<<endl;
+        cout<<"\ttree->HLTEleMuX_"<<endl;
+        cout<<"\t\t23: "<<(tree->HLTEleMuX_ >> 23 & 1)<<endl;
+        cout<<"\t\t45: "<<(tree->HLTEleMuX_ >> 45 & 1)<<endl;
+        cout<<"\t\t46: "<<(tree->HLTEleMuX_ >> 46 & 1)<<endl;
+        cout<<"\t\t51: "<<(tree->HLTEleMuX_ >> 51 & 1)<<endl;
+        cout<<"\t\t52: "<<(tree->HLTEleMuX_ >> 52 & 1)<<endl;
+        cout<<"Electron cut: "<<(passElectronCut ? "passed" : "failed")<<endl;
+        if (passElectronCut) { cout<<"\tEle 0 pt: "<<tree->elePt_->at(0)<<endl; }
+        cout<<"Muon cut: "<<(passMuonCut ? "passed" : "failed")<<endl;
+        if (passMuonCut) { cout<<"\tMu 0 pt: "<<tree->muPt_->at(0)<<endl; }
+        cout<<"Jet cut: "<<(passJetCut ? "passed" : "failed")<<endl;
+        cout<<"\tJets.size(): "<<Jets.size()<<endl;
+    }
 
 	if ( !(tree->isData_) ) { 
 	    int EleP = 0;

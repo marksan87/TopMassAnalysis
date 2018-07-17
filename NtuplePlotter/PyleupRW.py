@@ -9,9 +9,9 @@ class PyleupRW(object):
 
 	"""
 	
-	self.PUweightSum = 0  # sum of all of the pu corrections 
-	self.events = 0  # sum of all the events which require pu corrections
-	self.PUweightHist = None  # TH1D histogram
+	self.PUweightSum = {"nom":0, "up":0, "down":0}  # sum of all of the pu corrections 
+	self.events = {"nom":0, "up":0, "down":0}  # sum of all the events which require pu corrections
+	self.PUweightHist = {}  # Dictionary of pileup histograms with systematics: nominal, up, down 
 	self.mcPUHist = None
 	ROOT.gROOT.cd()
 	if mc_file_list is not None and pileupFile is not None and PUweightHist is not None:
@@ -31,11 +31,16 @@ class PyleupRW(object):
 	# Internal method
 	ROOT.gROOT.cd()
 	puF = TFile.Open(pileupFile)
-	self.PUweightHist = puF.Get("pileup")
-	self.PUweightHist.SetDirectory(0)
-	puF.Close()
+	self.PUweightHist["nom"] = puF.Get("pileup")
+	self.PUweightHist["nom"].SetDirectory(0)
+	
+        self.PUweightHist["up"] = puF.Get("pileupUp")
+	self.PUweightHist["up"].SetDirectory(0)
+	
+	self.PUweightHist["down"] = puF.Get("pileupDown")
+	self.PUweightHist["down"].SetDirectory(0)
+        puF.Close()
 
-	PUweightInt = self.PUweightHist.Integral()
 	mcPU = None 
 	for mc_file in mc_file_list:
 	    #print "reading file ", mc_file
@@ -57,11 +62,14 @@ class PyleupRW(object):
 	self.mcPUHist.SetDirectory(0)
 
 	mcPU.Scale(1.0/mcPU.Integral())
-	self.PUweightHist.Divide(mcPU)
-	self.PUweightHist.Scale(1.0/PUweightInt)
+	
+        for sys in ["nom", "down", "up"]:
+            PUweightInt = self.PUweightHist[sys].Integral()
+            self.PUweightHist[sys].Divide(mcPU)
+            self.PUweightHist[sys].Scale(1.0/PUweightInt)
 
 
-    def getWeight(self, nPUInfo, puBX, puTrue):
+    def getWeight(self, nPUInfo, puBX, puTrue,sys="nom"):
 	PUweight = 0.0
 	if self.PUweightHist is None:
 	    print "PUweightHist invalid"
@@ -69,13 +77,13 @@ class PyleupRW(object):
 
 	for puInd in xrange(0, nPUInfo):
 	    if puBX[puInd] == 0:
-		PUweight = self.PUweightHist.GetBinContent(self.PUweightHist.GetXaxis().FindBin(puTrue[puInd]))
+		PUweight = self.PUweightHist[sys].GetBinContent(self.PUweightHist[sys].GetXaxis().FindBin(puTrue[puInd]))
 		break
 
-	self.events += 1
-	self.PUweightSum += PUweight
+	self.events[sys] += 1
+	self.PUweightSum[sys] += PUweight
 	return PUweight
 
-    def getAvgWeight(self):
-	return -1.0 if self.events == 0 else self.PUweightSum/self.events 
+    def getAvgWeight(self, sys="nom"):
+	return -1.0 if self.events[sys] == 0 else self.PUweightSum[sys]/self.events[sys]
 
